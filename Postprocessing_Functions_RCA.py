@@ -588,7 +588,7 @@ def SelectRoxie(iron,inner,skew):
 # =============================================================================
 #     Assembles the path string
 # =============================================================================
-    path=r"ROXIE-MCBXFB"+"\\"+ironstr+"\\"+ironstr+" "+innerstr+r"\MCBXFB"+" "+ironstr+" "+innerstr+" "+skewstr
+    path=r"C:\RCA\ROXIE-MCBXFB"+"\\"+ironstr+"\\"+ironstr+" "+innerstr+r"\MCBXFB"+" "+ironstr+" "+innerstr+" "+skewstr
 # =============================================================================
     return path
 

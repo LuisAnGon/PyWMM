@@ -20,7 +20,8 @@ from Postprocessing_Functions_RCA import RotatingCoilAnalysisTurn, ContinuousRot
 # =============================================================================
 # Takes manually the location of the folder with the data In each folder there are sub folders corresponding to each position along the magnet
 # =============================================================================
-folder=r'C:\Magnetic Measurements\Debugging Python Elytt\AllCombinations\MCBXFB_02_Outer_Collar_Skew_600_20210510'
+folder=r'C:\RCA\WMM_All_configurations\MCBXFB_02_Outer_Iron_Normal_600_20210510'
+nombre=folder.split("\\")[-1] #Folder name
 # =============================================================================
 # Takes manually the location of the folder with the data In each folder there are sub folders corresponding to each position along the magnet
 # =============================================================================
@@ -33,13 +34,13 @@ AnalysisOptions= "cel deb dri nor rot"
 MagOrder=1
 Rref=0.05
 p_turn=512
-coil=folder.split("_")[5]      #Detects the length of the coil from the name of the folder
-tipo=folder.split("_")[0][-1] # Detects wether Magnet is A or B
-Rot90=int(folder.split("_")[4]=="Skew")
-nombre=folder.split("\\")[-1]
+coil=nombre.split("_")[5]      #Detects the length of the coil from the name of the folder
+tipo=nombre.split("_")[0][-1] # Detects wether Magnet is A or B
+Rot90=int(nombre.split("_")[4]=="Skew")
+nombre=nombre.split("\\")[-1]
 nombreShort=nombre.split("_200")[0].split("_600")[0]
-iron=int(folder.split("_")[3]=="Iron")
-inner=int(folder.split("_")[2]=="Inner")
+iron=int(nombre.split("_")[3]=="Iron")
+inner=int(nombre.split("_")[2]=="Inner")
 # =============================================================================
 # From the name of the folder defines: Length of Coil, Whether it is MCBXFA or MCBXFB
 # =============================================================================
@@ -61,7 +62,7 @@ else:
 
 print("Main Field: ",MainField)
 
-
+print(tipo)
 # =============================================================================
 # Based on above defines lists with the longitudinal positions (paso)
 # =============================================================================
@@ -88,7 +89,7 @@ elif coil == "200":
 # =============================================================================
 # Reads the sensitivities from The folder containig the .py code
 # =============================================================================
-senspath=r'Kn_R45_130_N1_0001_A_AC.txt'  
+senspath=r'C:\RCA\rca_calibration_data\Kn_R45_130_N1_0001_A_AC.txt'  
 [knAbs,knCmp]=GetSensitivities(senspath)
 # =============================================================================
 # Reads the sensitivities from The folder containig the .py code
