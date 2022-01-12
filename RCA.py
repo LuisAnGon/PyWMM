@@ -20,7 +20,10 @@ from Postprocessing_Functions_RCA import RotatingCoilAnalysisTurn, ContinuousRot
 # =============================================================================
 # Takes manually the location of the folder with the data In each folder there are sub folders corresponding to each position along the magnet
 # =============================================================================
-folder=r'C:\RCA\WMM_All_configurations\MCBXFB_02_Outer_Iron_Normal_600_20210510'
+#Folder used for measurements
+#folder=r'C:\RCA\WMM_All_configurations\MCBXFB_02_Outer_Iron_Normal_600_20210510' 
+#Folder used for developing
+folder=r'C:\Users\Luis González\cernbox\Work\CIEMAT-\MCBXF\FFMM\Python Post-processing\PyWMM\WMM_All_configurations\MCBXFB_02_Inner_Collar_600_20210510'
 nombre=folder.split("\\")[-1] #Folder name
 # =============================================================================
 # Takes manually the location of the folder with the data In each folder there are sub folders corresponding to each position along the magnet
@@ -34,13 +37,13 @@ AnalysisOptions= "cel deb dri nor rot"
 MagOrder=1
 Rref=0.05
 p_turn=512
-coil=nombre.split("_")[5]      #Detects the length of the coil from the name of the folder
+coil=nombre.split("_")[4]      #Detects the length of the coil from the name of the folder
 tipo=nombre.split("_")[0][-1] # Detects wether Magnet is A or B
-Rot90=int(nombre.split("_")[4]=="Skew")
-nombre=nombre.split("\\")[-1]
 nombreShort=nombre.split("_200")[0].split("_600")[0]
 iron=int(nombre.split("_")[3]=="Iron")
+collar=int(nombre.split("_")[3]=="Collar")
 inner=int(nombre.split("_")[2]=="Inner")
+outer=int(nombre.split("_")[2]=="Outer")
 # =============================================================================
 # From the name of the folder defines: Length of Coil, Whether it is MCBXFA or MCBXFB
 # =============================================================================
@@ -49,6 +52,15 @@ inner=int(nombre.split("_")[2]=="Inner")
 # =============================================================================
 # Define the main orientation of the field based on wether it is inner or aouter / Normal or Skew
 # =============================================================================
+
+
+if collar==0 and iron==1:
+    Rot90=0 
+if collar==1 and iron==0 and inner==1 and outer==0:
+    Rot90=0
+if collar==1 and iron==0 and inner==0 and outer ==1:
+    Rot90=1
+    
 if Rot90==1 and inner==1:
     MainField="SKEW"
 elif Rot90==0 and inner==0:
@@ -130,8 +142,8 @@ raw.to_excel(folder+"\\"+rawname+".xlsx")
 # =============================================================================
 for m in meas:# We go to each position
     pos=int(m.split("pos")[1].split("_")[0])
-    Current=int(m.split("_")[10].split("A")[0]) # Read the current at which the measurement was done   
-    step=int(m.split("_")[5].split("A")[0])
+    Current=int(m.split("_")[9].split("A")[0]) # Read the current at which the measurement was done   
+    step=int(m.split("_")[4].split("A")[0])
     
     file=folder+"\\"+m
     Av=ContinuousRotatingCoilAnalysis (file, p_turn, knAbs, knCmp, MagOrder, Rref, AnalysisOptions,step,MainField) #Get the average of all the Rotation coil turns
