@@ -404,6 +404,7 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
         if item.split(".")[-1]=="output":
             fileroxie=item
     f=open(file+"\\"+fileroxie)
+    
 # =============================================================================
 #     Takes the Roxie output corresponding to the measured magnet that is in the measurement folder (The Roxie output could be taken from a common folder and chosen according to the specifications given in the measurement folder name)
 # =============================================================================
@@ -497,7 +498,6 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
     if bothDipoles==False:
 
         MP=10000*(alles.iloc[int(max(alles.index)/2)]/(max(alles.iloc[int(max(alles.index)/2)])))
-        print("MP",MP)
         MP=MP.drop(['position'],axis=0)        
 # =============================================================================
 # Creates a df with the Multipoles in the center of the magnet (MP) already normalized
@@ -510,6 +510,8 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
     colstocorrect=list(alles.columns)
     colstocorrect.remove("position")
     alles[colstocorrect]=alles[colstocorrect]*correction
+    
+    print("CORRECTION",1/correction)
 
 
 
@@ -519,7 +521,9 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
 # =============================================================================
 # Normalizes all the profiles (except the main field) to the main field A1 or B1 depending on whether the magnet is Normal or Skew. Then normalizes the Main Field to its maximum
 # =============================================================================
+    print("*****")
     if norm:
+        print("NORM")
         if skew==1:
             mainRoxie="A1 Roxie"
         elif skew==0:
@@ -533,7 +537,6 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
               alles[col]=10000*alles[col]/alles[mainRoxie]
        
         alles[mainRoxie]=10000*alles[mainRoxie]/(alles[mainRoxie][len(alles[mainRoxie])/2])
-    
 # =============================================================================
 # Normalizes all the profiles (except the main field) to the main field A1 or B1 depending on whether the magnet is Normal or Skew. Then normalizes the Main Field to its maximum
 # =============================================================================
@@ -548,9 +551,6 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
     filename=fileroxie.split(".")[0]
     alles.to_excel(file+"\\"+filename+"_Roxie_MP.xlsx")
     MP.to_excel(file+"\\"+filename+"_Roxie_MP_Centre.xlsx")
-    
-   
-    
 # =============================================================================
 # Saves both df´s 
 # =============================================================================

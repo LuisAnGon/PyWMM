@@ -23,7 +23,7 @@ from Postprocessing_Functions_RCA import RotatingCoilAnalysisTurn, ContinuousRot
 #Folder used for measurements
 #folder=r'C:\RCA\WMM_All_configurations\MCBXFB_02_Outer_Iron_Normal_600_20210510' 
 #Folder used for developing
-folder=r'C:\Users\Luis González\cernbox\Work\CIEMAT-\MCBXF\FFMM\Python Post-processing\PyWMM\WMM_All_configurations\MCBXFA_02_Inner_Iron_600_20220510'
+folder=r'C:\Users\Luis González\cernbox\Work\CIEMAT-\MCBXF\FFMM\Python Post-processing\PyWMM\WMM_All_configurations\MCBXFB_02_Outer_Iron_600_20210510'
 nombre=folder.split("\\")[-1] #Folder name
 print("Dipole measured: ", nombre.split("_")[0], nombre.split("_")[2], nombre.split("_")[3])
 print("Rotating Coil Length: ", nombre.split("_")[-2])
@@ -288,7 +288,7 @@ Av.to_excel(folder+"\\Summary_MM_"+nombre+".xlsx")
 # Finds the Roxie file in C: according to the characteristics of the magnet. Info taken from folder name
 # =============================================================================
 RoxieFolder=SelectRoxie(iron,inner,Rot90)
-print("Roxie Folder: ", RoxieFolder.split("\\")[-1])
+print("Roxie Folder: ", RoxieFolder)
 # =============================================================================
 # Finds the Roxie file in C: according to the characyeristics of the magnet. Info taken from folder name
 # =============================================================================
