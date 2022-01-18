@@ -120,7 +120,7 @@ def ContinuousRotatingCoilAnalysis (datafile, p_turn, knAbs, knCmp, MagOrder, Rr
         # Position["Turn_"+str(i)]=
         
         i=i+1
-    print("PhiOut: ",PhiOut)
+    
     
     Multip_list=[Header,NCmp,SCmp] # Add number of the Multipole
     
@@ -473,7 +473,7 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
 #     Creates a df with all multipole profiles (alles)
 # =============================================================================
 
-
+    
 
    
 # =============================================================================
@@ -481,10 +481,12 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
 # =============================================================================
     shift=abs(abs(alles['position'].min())-abs(alles["position"].max()))/2
     alles["position"]=alles['position']+shift
+    print(file)
+    alles.to_excel(file+"\\_Alles.xlsx")
 # =============================================================================
 # Shifts the position columns for the profile to be centered in 0
 # =============================================================================
-
+    
 
 
 
@@ -495,6 +497,7 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
     if bothDipoles==False:
 
         MP=10000*(alles.iloc[int(max(alles.index)/2)]/(max(alles.iloc[int(max(alles.index)/2)])))
+        print("MP",MP)
         MP=MP.drop(['position'],axis=0)        
 # =============================================================================
 # Creates a df with the Multipoles in the center of the magnet (MP) already normalized
@@ -510,7 +513,7 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
 
 
 
-
+    
 
 
 # =============================================================================
@@ -530,6 +533,7 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
               alles[col]=10000*alles[col]/alles[mainRoxie]
        
         alles[mainRoxie]=10000*alles[mainRoxie]/(alles[mainRoxie][len(alles[mainRoxie])/2])
+    
 # =============================================================================
 # Normalizes all the profiles (except the main field) to the main field A1 or B1 depending on whether the magnet is Normal or Skew. Then normalizes the Main Field to its maximum
 # =============================================================================
@@ -544,6 +548,9 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
     filename=fileroxie.split(".")[0]
     alles.to_excel(file+"\\"+filename+"_Roxie_MP.xlsx")
     MP.to_excel(file+"\\"+filename+"_Roxie_MP_Centre.xlsx")
+    
+   
+    
 # =============================================================================
 # Saves both df´s 
 # =============================================================================
@@ -642,7 +649,7 @@ def SelectRoxieManual():
 
     return path
 
-def interpolate_Roxie_MM(folder,dfRoxie,dfMM,name,save=False):
+def interpolate_Roxie_MM(folder,dfRoxie,dfMM,name,tipo,save=False):
     """
     Takes the Roxie dataframe in the shape "Alles" and interpolates it to have values in the same positions as the magnetic measurements.
 
@@ -690,6 +697,7 @@ def interpolate_Roxie_MM(folder,dfRoxie,dfMM,name,save=False):
 # =============================================================================
     rango_mm=pd.DataFrame(dfMM['position']).astype(float)
     rango_mm.columns=['position']
+
 # =============================================================================
 #     Creates a df with one columns which is the positions of the magnetic measurements
 # =============================================================================
@@ -700,8 +708,11 @@ def interpolate_Roxie_MM(folder,dfRoxie,dfMM,name,save=False):
 #     Interpolates Roxie df to have step of 1mm
 # =============================================================================
     dfRoxie=dfRoxie.astype(float)
+
     rango_RX=pd.DataFrame(np.arange(int(dfRoxie['position'].min()),int(dfRoxie['position'].max())+1,1),columns=['position']).astype(float)
+
     result=dfRoxie.merge(rango_RX,how="outer").sort_values(by='position').interpolate(method='linear')
+
 # =============================================================================
 #     Interpolates Roxie df to have step of 1mm
 # =============================================================================
@@ -711,8 +722,19 @@ def interpolate_Roxie_MM(folder,dfRoxie,dfMM,name,save=False):
 # =============================================================================
 #     Merge MM and Roxie DFs Eliminating from Roxie df the positions that are not in the MM df
 # =============================================================================   
-    result=result.merge(rango_mm,how="right")
+
+    interpolated=pd.DataFrame(columns=result.columns)
+    for pos in rango_mm.position:
+        
+        section=result[result["position"]>(int(pos)-300)]
+        section=section[section["position"]<pos+300]
+        row=[section[col].mean() for col in section.columns]
+        interpolated.loc[len(interpolated)]=row
+    interpolated.position=list(rango_mm.position)
+    result=interpolated
     #result.to_excel(file+"//roxie_int_"+name+".xlsx")
+    
+    
 # =============================================================================
 #     Eliminate from Roxie df the positions that are not in the MM df
 # =============================================================================

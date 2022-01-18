@@ -1,11 +1,3 @@
-Change the naming of the WMM files. 
+Change Roxie interpolation method. Now it just sums up the roxie values +- 300 mm from each measuring position, this simulates the integral measured with the rotating coil. This was done for both MCBXFA-B
 
-This implies changes in FFMM export names and GUI
-
-Changed the logics derived from the naming
-
-In FFMM there is no need for the user to say whether the magnet is normal or skew
-
-at each stage of fabrication iron/collared, inner/outer the magnet will always be at the same Normal/skew configuration.
-
-Change SelectRoxie
+Added plot informe multipoles profile
