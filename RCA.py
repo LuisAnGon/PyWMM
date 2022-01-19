@@ -23,7 +23,7 @@ from Postprocessing_Functions_RCA import RotatingCoilAnalysisTurn, ContinuousRot
 #Folder used for measurements
 #folder=r'C:\RCA\WMM_All_configurations\MCBXFB_02_Outer_Iron_Normal_600_20210510' 
 #Folder used for developing
-folder=r'C:\Users\Luis González\cernbox\Work\CIEMAT-\MCBXF\FFMM\Python Post-processing\PyWMM\WMM_All_configurations\MCBXFB_02_Outer_Iron_600_20210510'
+folder=r'C:\Users\Luis González\cernbox\Work\CIEMAT-\MCBXF\FFMM\Python Post-processing\PyWMM\WMM_All_configurations\MCBXFA_02_Inner_Iron_600_20220510-2'
 nombre=folder.split("\\")[-1] #Folder name
 print("Dipole measured: ", nombre.split("_")[0], nombre.split("_")[2], nombre.split("_")[3])
 print("Rotating Coil Length: ", nombre.split("_")[-2])
@@ -35,6 +35,7 @@ print("Rotating Coil Length: ", nombre.split("_")[-2])
 # =============================================================================
 # From the name of the folder defines: Length of Coil, Whether it is MCBXFA or MCBXFB
 # =============================================================================
+# AnalysisOptions= "cel deb dri rot"
 AnalysisOptions= "cel deb dri nor rot"
 MagOrder=1
 Rref=0.05
@@ -298,7 +299,7 @@ print("Roxie Folder: ", RoxieFolder)
 # =============================================================================
 # Reads the simulations performed with Roxie
 # =============================================================================
-[RoxieMP,Roxieall]=ReadRoxie(RoxieFolder,norm=True,skew=int(MainField=="SKEW"))
+[RoxieMP,Roxieall]=ReadRoxie(RoxieFolder,norm=False,skew=int(MainField=="SKEW"))
 
 #If We have a long magnet MCBXFA, the Roxie file must be extended +1m
 if tipo=="A":
@@ -354,17 +355,29 @@ comp_Roxie_Meas.to_excel(folder+'\\Roxie_vs_MM_MiddlePoint '+nombre+'.xlsx')
 # Creates a df in which the Roxie profiles are interpolated to select the values corresponding to the measured points and is merged to the measured points. 
 # Then Saves a different file for normal and skew 
 # =============================================================================
-roxie_int_Av_NN=interpolate_Roxie_MM(folder,Roxieall,Av_NN,'Av_NN',tipo)
-roxie_int_Av_NN=roxie_int_Av_NN[["position","B1 Roxie","B2 Roxie","B3 Roxie","B4 Roxie","B5 Roxie","B6 Roxie","B7 Roxie","B8 Roxie",
-                                  "B9 Roxie","B10 Roxie","B11 Roxie","B12 Roxie","B13 Roxie","B14 Roxie","B15 Roxie"]]
-roxie_int_Av_NS=interpolate_Roxie_MM(folder,Roxieall,Av_NS,'Av_NS',tipo)
-roxie_int_Av_NS=roxie_int_Av_NS[["position","A1 Roxie","A2 Roxie","A3 Roxie","A4 Roxie","A5 Roxie","A6 Roxie","A7 Roxie","A8 Roxie",
-                                  "A9 Roxie","A10 Roxie","A11 Roxie","A12 Roxie","A13 Roxie","A14 Roxie","A15 Roxie"]]
 
-Roxie_MM_NN=pd.merge(Av_NN,roxie_int_Av_NN)
-Roxie_MM_NN.to_excel(folder+"\\Roxie_vs_MM_Normal"+nombre+".xlsx")
-Roxie_MM_NS=pd.merge(Av_NS,roxie_int_Av_NS)
-Roxie_MM_NS.to_excel(folder+"\\Roxie_vs_MM_Skew"+nombre+".xlsx")
+if mainRoxie=="B1":
+    roxie_int_Av_NN=interpolate_Roxie_MM(folder,Roxieall,Av_NN,'Av_NN',tipo)
+    roxie_int_Av_NN=roxie_int_Av_NN[["position","B1 Roxie","B2 Roxie","B3 Roxie","B4 Roxie","B5 Roxie","B6 Roxie","B7 Roxie","B8 Roxie",
+                                      "B9 Roxie","B10 Roxie","B11 Roxie","B12 Roxie","B13 Roxie","B14 Roxie","B15 Roxie"]]
+    Roxie_MM_NN=pd.merge(Av_NN,roxie_int_Av_NN)
+    
+    
+    for b in ['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10','b11', 'b12', 'b13', 'b14', 'b15']:
+        Roxie_MM_NN[b]=Roxie_MM_NN[b]*Roxie_MM_NN["B1"]/10000
+    Roxie_MM_NN.to_excel(folder+"\\Roxie_vs_MM_Normal"+nombre+".xlsx")
+
+
+elif mainRoxie=="A1":
+    roxie_int_Av_NS=interpolate_Roxie_MM(folder,Roxieall,Av_NS,'Av_NS',tipo)
+    roxie_int_Av_NS=roxie_int_Av_NS[["position","A1 Roxie","A2 Roxie","A3 Roxie","A4 Roxie","A5 Roxie","A6 Roxie","A7 Roxie","A8 Roxie",
+                                      "A9 Roxie","A10 Roxie","A11 Roxie","A12 Roxie","A13 Roxie","A14 Roxie","A15 Roxie"]]
+    Roxie_MM_NS=pd.merge(Av_NS,roxie_int_Av_NS)
+    
+    for b in ['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10','b11', 'b12', 'b13', 'b14', 'b15']:
+        Roxie_MM_NN[b]=Roxie_MM_NN[b]*Roxie_MM_NN["B1"]/10000
+    
+    Roxie_MM_NS.to_excel(folder+"\\Roxie_vs_MM_Skew"+nombre+".xlsx")
 
 # =============================================================================
 # Creates a df in which the Roxie profiles are interpolated to select the values corresponding to the measured points and is merged to the measured points. 
@@ -403,32 +416,48 @@ axs[1].legend()
 
 fig.savefig((folder+"\\Informe_Multipoles_Center.pdf"))
 
+if mainRoxie=="B1":
+    u1="B1"
+    u3="B3"
+    u5="B5"
+    l1="b1"
+    l3="b3"
+    l5="b5"
+if mainRoxie=="A1":
+    u1="A1"
+    u3="A3"
+    u5="A5"
+    l1="a1"
+    l3="a3"
+    l5="a5"
+    
+
 fig, axs = plt.subplots(3,figsize=(5,7))
-axs[0].plot(roxie_int_Av_NN.position,Roxie_MM_NN["B1 Roxie"],label="Roxie B1",marker=".")
-axs[0].plot(roxie_int_Av_NN.position,Roxie_MM_NN["B1"],label="MM B1",marker=".")
+axs[0].plot(roxie_int_Av_NN.position,Roxie_MM_NN[u1+" Roxie"],label="Roxie "+u1,marker=".")
+axs[0].plot(roxie_int_Av_NN.position,Roxie_MM_NN[u1],label="MM "+u1,marker=".")
 axs[0].set_xticks(list(roxie_int_Av_NN.position))
 axs[0].set_xticks([it+300 for it in list(roxie_int_Av_NN.position)]+[it-300 for it in list(roxie_int_Av_NN.position)],minor=True)
 axs[0].xaxis.grid(False, which='major')
 axs[0].xaxis.grid(True, linestyle='--', linewidth=0.5, which='minor')
-axs[0].set_ylabel("B1")
+axs[0].set_ylabel(u1)
 axs[0].legend()
 
-axs[1].plot(roxie_int_Av_NN.position,Roxie_MM_NN["B3 Roxie"],label="Roxie b3",marker=".")
-axs[1].plot(roxie_int_Av_NN.position,Roxie_MM_NN["b3"],label="MM b3",marker=".")
+axs[1].plot(roxie_int_Av_NN.position,Roxie_MM_NN[u3+" Roxie"],label="Roxie "+l3,marker=".")
+axs[1].plot(roxie_int_Av_NN.position,Roxie_MM_NN[l3],label="MM "+l3,marker=".")
 axs[1].set_xticks(list(roxie_int_Av_NN.position))
 axs[1].set_xticks([it+300 for it in list(roxie_int_Av_NN.position)]+[it-300 for it in list(roxie_int_Av_NN.position)],minor=True)
 axs[1].xaxis.grid(False, which='major')
 axs[1].xaxis.grid(True, linestyle='--', linewidth=0.5, which='minor')
-axs[1].set_ylabel("b3")
+axs[1].set_ylabel(l3)
 axs[1].legend()
 
-axs[2].plot(roxie_int_Av_NN.position,Roxie_MM_NN["B5 Roxie"],label="Roxie b5",marker=".")
-axs[2].plot(roxie_int_Av_NN.position,Roxie_MM_NN["b5"],label="MM b5",marker=".")
+axs[2].plot(roxie_int_Av_NN.position,Roxie_MM_NN[u5+" Roxie"],label="Roxie "+l5,marker=".")
+axs[2].plot(roxie_int_Av_NN.position,Roxie_MM_NN[l5],label="MM "+l5,marker=".")
 axs[2].set_xticks(list(roxie_int_Av_NN.position))
 axs[2].set_xticks([it+300 for it in list(roxie_int_Av_NN.position)]+[it-300 for it in list(roxie_int_Av_NN.position)],minor=True)
 axs[2].xaxis.grid(False, which='major')
 axs[2].xaxis.grid(True, linestyle='--', linewidth=0.5, which='minor')
-axs[2].set_ylabel("b5")
+axs[2].set_ylabel(l5)
 axs[2].set_xlabel("Position [mm]")
 axs[2].legend()
 

@@ -511,7 +511,7 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
     colstocorrect.remove("position")
     alles[colstocorrect]=alles[colstocorrect]*correction
     
-    print("CORRECTION",1/correction)
+    
 
 
 
@@ -521,7 +521,7 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
 # =============================================================================
 # Normalizes all the profiles (except the main field) to the main field A1 or B1 depending on whether the magnet is Normal or Skew. Then normalizes the Main Field to its maximum
 # =============================================================================
-    print("*****")
+    
     if norm:
         print("NORM")
         if skew==1:

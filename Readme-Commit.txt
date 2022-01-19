@@ -1,3 +1,1 @@
-Change Roxie interpolation method. Now it just sums up the roxie values +- 300 mm from each measuring position, this simulates the integral measured with the rotating coil. This was done for both MCBXFA-B
-
-Added plot informe multipoles profile
+The multipole profiles compared to Roxie have ben changed to be Bn,An instead of bn, an. If we use the normalized multipoles the Roxie profile will be extremely ugly and not intuitive to understand
