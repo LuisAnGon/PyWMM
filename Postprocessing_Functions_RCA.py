@@ -222,7 +222,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
         PhiOut=PhiOut-(np.pi/2)
     
     
-    
+    print ("PhiOut= ",PhiOut)
     B_Main_Rotated = (np.exp(-1j*(PhiOut)*MagOrder) * (c_sens_abs[MagOrder-1]))
     
     B_Main_Rotated_norm = np.real((np.exp(-1j*(PhiOut)*MagOrder) * (c_sens_abs[MagOrder-1])))

@@ -23,7 +23,7 @@ from Postprocessing_Functions_RCA import RotatingCoilAnalysisTurn, ContinuousRot
 #Folder used for measurements
 #folder=r'C:\RCA\WMM_All_configurations\MCBXFB_02_Outer_Iron_Normal_600_20210510' 
 #Folder used for developing
-folder=r'C:\Users\Luis González\cernbox\Work\CIEMAT-\MCBXF\FFMM\Python Post-processing\PyWMM\WMM_All_configurations\MCBXFA_02_Inner_Iron_600_20220510-2'
+folder=r'C:\Users\admin\cernbox\Work\CIEMAT-\MCBXF\FFMM\Python Post-processing\PyWMM\WMM_All_configurations\MCBXFA_02_Outer_Collar_600_20220510'
 nombre=folder.split("\\")[-1] #Folder name
 print("Dipole measured: ", nombre.split("_")[0], nombre.split("_")[2], nombre.split("_")[3])
 print("Rotating Coil Length: ", nombre.split("_")[-2])
