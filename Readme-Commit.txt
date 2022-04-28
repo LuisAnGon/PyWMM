@@ -1,1 +1,11 @@
-The multipole profiles compared to Roxie have ben changed to be Bn,An instead of bn, an. If we use the normalized multipoles the Roxie profile will be extremely ugly and not intuitive to understand
+The directory of the whole software is in C\PyWMM
+
+This is because I have cloned the GIT directory, I do not want to have GIT updates in clonfict with CERNbox updates
+
+All is in this directory
+
+The MM data (This can be changed on the go, but on the code)
+
+The Roxie Data
+
+The Calibration Data

@@ -23,7 +23,7 @@ from Postprocessing_Functions_RCA import RotatingCoilAnalysisTurn, ContinuousRot
 #Folder used for measurements
 #folder=r'C:\RCA\WMM_All_configurations\MCBXFB_02_Outer_Iron_Normal_600_20210510' 
 #Folder used for developing
-folder=r'C:\Users\admin\cernbox\Work\CIEMAT-\MCBXF\FFMM\Python Post-processing\PyWMM\WMM_All_configurations\MCBXFA_02_Outer_Collar_600_20220510'
+folder=r'C:\PyWMM\WMM_All_configurations\MCBXFA_02_Inner_Collar_600_20220510'
 nombre=folder.split("\\")[-1] #Folder name
 print("Dipole measured: ", nombre.split("_")[0], nombre.split("_")[2], nombre.split("_")[3])
 print("Rotating Coil Length: ", nombre.split("_")[-2])
@@ -109,7 +109,7 @@ elif coil == "200":
 # =============================================================================
 # Reads the sensitivities from The folder containig the .py code
 # =============================================================================
-senspath=r'C:\RCA\rca_calibration_data\Kn_R45_130_N1_0001_A_AC.txt'  
+senspath=r'C:\PyWMM\rca_calibration_data\Kn_R45_130_N1_0001_A_AC.txt'  
 [knAbs,knCmp]=GetSensitivities(senspath)
 # =============================================================================
 # Reads the sensitivities from The folder containig the .py code
