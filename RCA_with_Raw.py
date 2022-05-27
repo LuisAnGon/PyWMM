@@ -22,7 +22,7 @@ from Postprocessing_Functions_RCA_Raw import RotatingCoilAnalysisTurn, Continuou
 # Takes manually the location of the folder with the data In each folder there are sub folders corresponding to each position along the magnet
 # =============================================================================
 
-folder=r'C:\PyWMM\MCBXFB_PP-Piotr-Crosscheck_Outer_Iron_600_20220519_145829'
+folder=r'C:\PyWMM\Debugg Piotr\MCBXFB_PP-Piotr-Crosscheck_Inner_Iron_600_20220519_104910'
 nombre=folder.split("\\")[-1] #Folder name
 
 
