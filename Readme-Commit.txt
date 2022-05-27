@@ -1,11 +1,19 @@
-The directory of the whole software is in C\PyWMM
+This is a new version.
 
-This is because I have cloned the GIT directory, I do not want to have GIT updates in clonfict with CERNbox updates
+Here we read the data from the Raw file only. We do not iterate through all the files. Also, the "Metadata" is taken from the raw file instead from the file names
 
-All is in this directory
+It works taking Normal rotation and Inverse rotation of the mole. It expects both rotations
 
-The MM data (This can be changed on the go, but on the code)
+We have fixed the ZeroLoc functionality
 
-The Roxie Data
+We have improved the drift correction
 
-The Calibration Data
+We have added a circular shift in the abs, cmd, time data, needed from a bug in FFMM 
+
+We have fixed the feeddown correction
+
+The x,y values are expressed in mm
+
+The Angle is expressed in mrad
+
+The angle is the angle obtained during angle rotation (Bmain only one component) and we have added the level coil angle calibration
