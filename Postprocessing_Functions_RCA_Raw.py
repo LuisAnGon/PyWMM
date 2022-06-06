@@ -460,7 +460,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
     
     
     
-def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
+def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False):
         """
         Reads Roxie .output in the format that Luis Gonzalez makes the calculations i.e. 30-31 separate plots with B1, B2, B3...A13, A14, A15, (A16-field along path)
     
@@ -486,167 +486,224 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0):
         -------
         list
             [df with the multipoles as a funtion of the longitudinal position,
-            df with the  ultipoles at the center]
+            df with the  multipoles at the center,
+            list with the multipoles integrated,
+            Value of the  total integrated field]
         """
-    # =============================================================================
-    #     Takes the Roxie output corresponding to the measured magnet that is in the measurement folder (The Roxie output could be taken from a common folder and chosen according to the specifications given in the measurement folder name)
-    # =============================================================================
+        # =============================================================================
+        #     Takes the Roxie output corresponding to the measured magnet that is in the measurement folder (The Roxie output could be taken from a common folder and chosen according to the specifications given in the measurement folder name)
+        # =============================================================================
         for item in os.listdir(file):
             if item.split(".")[-1]=="output":
                 fileroxie=item
         f=open(file+"\\"+fileroxie)
-        
-    # =============================================================================
-    #     Takes the Roxie output corresponding to the measured magnet that is in the measurement folder (The Roxie output could be taken from a common folder and chosen according to the specifications given in the measurement folder name)
-    # =============================================================================
-       
-    
-        
-    
-    # =============================================================================
-    #     From the .output selects the multipole profile data columns
-    # =============================================================================
-        s=f.read()
+        RX=f.read()
         f.close()
-        s=s.replace('/','')
-        s=s.replace('NUMBER OF OBJECTIVES AND CONSTRAINTS','GRAPH')
-        a=s.split('GRAPH')
-        dflst=[]
-    # =============================================================================
-    #     From the .output selects the multipole profile data columns
-    # =============================================================================
-    
-    
-    
-    
-     
-    # =============================================================================
-    #     Creates a df with all multipole profiles (alles)
-    # =============================================================================
-        alles=pd.DataFrame()
-        malles=pd.DataFrame()
-        c=0
-        for i in range(2,(len(a)-1),1):
-            
-            b=a[i].split('\n')[2:-3]
-            
-            df=pd.DataFrame(b,columns=['a'])
-            dff=df.a.str.split('   ',expand=True)
-            dff.columns=['a','b','c','d','e']
-            new=pd.DataFrame()
-            
-            new['position']=dff['d'].astype(float)
-            new['Signal']=dff['e'].astype(float)   
-            
-            
-            if NS == "NS":
-            
-                if c<n:
-                    
+        
+        # =============================================================================
+        #     Takes the Roxie output corresponding to the measured magnet that is in the measurement folder (The Roxie output could be taken from a common folder and chosen according to the specifications given in the measurement folder name)
+        # =============================================================================
+
+        
+        
+        
+        if bidi==False:
+        
+        # =============================================================================
+        #     From the .output selects the multipole profile data columns
+        # =============================================================================
+
+            s=RX.replace('/','')
+            s=s.replace('NUMBER OF OBJECTIVES AND CONSTRAINTS','GRAPH')
+            a=s.split('GRAPH')
+            dflst=[]
+        # =============================================================================
+        #     From the .output selects the multipole profile data columns
+        # =============================================================================
+        
+        
+        
+        
+         
+        # =============================================================================
+        #     Creates a df with all multipole profiles (alles)
+        # =============================================================================
+            alles=pd.DataFrame()
+            malles=pd.DataFrame()
+            c=0
+            for i in range(2,(len(a)-1),1):
+                
+                b=a[i].split('\n')[2:-3]
+                
+                df=pd.DataFrame(b,columns=['a'])
+                dff=df.a.str.split('   ',expand=True)
+                dff.columns=['a','b','c','d','e']
+                new=pd.DataFrame()
+                
+                new['position']=dff['d'].astype(float)
+                new['Signal']=dff['e'].astype(float)   
+                
+                
+                if NS == "NS":
+                
+                    if c<n:
+                        
+                        alles['position']=new['position']
+                        alles['B'+str(c+1)+" Roxie"]=new['Signal'].fillna(method='ffill')
+                        
+                    else:
+                        
+                        alles['A'+str(c-(n-1))+" Roxie"]=new['Signal'].fillna(method='ffill')
+                        
+                elif NS == "N":
                     alles['position']=new['position']
                     alles['B'+str(c+1)+" Roxie"]=new['Signal'].fillna(method='ffill')
                     
-                else:
-                    
-                    alles['A'+str(c-(n-1))+" Roxie"]=new['Signal'].fillna(method='ffill')
-                    
-            elif NS == "N":
-                alles['position']=new['position']
-                alles['B'+str(c+1)+" Roxie"]=new['Signal'].fillna(method='ffill')
-                
-            elif NS == "S":
-                alles['position']=new['position']
-                alles['A'+str(c+1)+" Roxie"]=new['Signal'].fillna(method='ffill')
-                # malles['B'+str(odds[c])]=new['Signal']
-                # alles['B'+str(odds[c])+'Shift_up']=new['Signal'].shift(periods=1,axis=0,fill_value=new['Signal'][0])  
-                # alles['B'+str(odds[c])+'Shift_down']=new['Signal'].shift(periods=-1,axis=0,fill_value=new['Signal'][0])  
-            c+=1
-    # =============================================================================
-    #     Creates a df with all multipole profiles (alles)
-    # =============================================================================
-    
+                elif NS == "S":
+                    alles['position']=new['position']
+                    alles['A'+str(c+1)+" Roxie"]=new['Signal'].fillna(method='ffill')
+                    # malles['B'+str(odds[c])]=new['Signal']
+                    # alles['B'+str(odds[c])+'Shift_up']=new['Signal'].shift(periods=1,axis=0,fill_value=new['Signal'][0])  
+                    # alles['B'+str(odds[c])+'Shift_down']=new['Signal'].shift(periods=-1,axis=0,fill_value=new['Signal'][0])  
+                c+=1
+        # =============================================================================
+        #     Creates a df with all multipole profiles (alles)
+        # =============================================================================
         
-    
-       
-    # =============================================================================
-    # Shifts the position columns for the profile to be centered in 0
-    # =============================================================================
-        shift=abs(abs(alles['position'].min())-abs(alles["position"].max()))/2
-        alles["position"]=alles['position']+shift
-        
-        alles.to_excel(file+"\\_Alles.xlsx")
-    # =============================================================================
-    # Shifts the position columns for the profile to be centered in 0
-    # =============================================================================
-        
-    
-    
-    
-    
-    # =============================================================================
-    # Creates a df with the Multipoles in the center of the magnet (MP) already normalized
-    # =============================================================================
-        if bothDipoles==False:
-    
-            MP=10000*(alles.iloc[int(max(alles.index)/2)]/(max(alles.iloc[int(max(alles.index)/2)])))
-            MP=MP.drop(['position'],axis=0)        
-    # =============================================================================
-    # Creates a df with the Multipoles in the center of the magnet (MP) already normalized
-    # =============================================================================
-    
-    
-    
-    
-        correction=10000/max(alles.iloc[int(max(alles.index)/2)])
-        colstocorrect=list(alles.columns)
-        colstocorrect.remove("position")
-        alles[colstocorrect]=alles[colstocorrect]*correction
-        
-        
-    
-    
-    
-        
-    
-    
-    # =============================================================================
-    # Normalizes all the profiles (except the main field) to the main field A1 or B1 depending on whether the magnet is Normal or Skew. Then normalizes the Main Field to its maximum
-    # =============================================================================
-        
-        if norm:
-            print("NORM")
-            if skew==1:
-                mainRoxie="A1 Roxie"
-            elif skew==0:
-                mainRoxie="B1 Roxie"
-                
-            colstonorm=list(alles.columns)
-            colstonorm.remove("position")
-            colstonorm.remove(mainRoxie)
             
-            for col in colstonorm:
-                  alles[col]=10000*alles[col]/alles[mainRoxie]
-           
-            alles[mainRoxie]=10000*alles[mainRoxie]/(alles[mainRoxie][len(alles[mainRoxie])/2])
-    # =============================================================================
-    # Normalizes all the profiles (except the main field) to the main field A1 or B1 depending on whether the magnet is Normal or Skew. Then normalizes the Main Field to its maximum
-    # =============================================================================
-    
-    
-    
-    
-    
-    # =============================================================================
-    # Saves both df´s            
-    # =============================================================================
-        filename=fileroxie.split(".")[0]
-        alles.to_excel(file+"\\"+filename+"_Roxie_MP.xlsx")
-        MP.to_excel(file+"\\"+filename+"_Roxie_MP_Centre.xlsx")
-    # =============================================================================
-    # Saves both df´s 
-    # =============================================================================
         
-        return [MP,alles]
+           
+        # =============================================================================
+        # Shifts the position columns for the profile to be centered in 0
+        # =============================================================================
+            shift=abs(abs(alles['position'].min())-abs(alles["position"].max()))/2
+            alles["position"]=alles['position']+shift
+            
+            alles.to_excel(file+"\\_Alles.xlsx")
+        # =============================================================================
+        # Shifts the position columns for the profile to be centered in 0
+        # =============================================================================
+            
+        
+        
+        
+        
+        # =============================================================================
+        # Creates a df with the Multipoles in the center of the magnet (MP) already normalized
+        # =============================================================================
+            if bothDipoles==False:
+        
+                MP=10000*(alles.iloc[int(max(alles.index)/2)]/(max(alles.iloc[int(max(alles.index)/2)])))
+                MP=MP.drop(['position'],axis=0)        
+        # =============================================================================
+        # Creates a df with the Multipoles in the center of the magnet (MP) already normalized
+        # =============================================================================
+        
+        
+        
+        
+            correction=10000/max(alles.iloc[int(max(alles.index)/2)])
+            colstocorrect=list(alles.columns)
+            colstocorrect.remove("position")
+            alles[colstocorrect]=alles[colstocorrect]*correction
+            
+            
+        
+        
+        
+            
+        
+        
+        # =============================================================================
+        # Normalizes all the profiles (except the main field) to the main field A1 or B1 depending on whether the magnet is Normal or Skew. Then normalizes the Main Field to its maximum
+        # =============================================================================
+            
+            if norm:
+                print("NORM")
+                if skew==1:
+                    mainRoxie="A1 Roxie"
+                elif skew==0:
+                    mainRoxie="B1 Roxie"
+                    
+                colstonorm=list(alles.columns)
+                colstonorm.remove("position")
+                colstonorm.remove(mainRoxie)
+                
+                for col in colstonorm:
+                      alles[col]=10000*alles[col]/alles[mainRoxie]
+               
+                alles[mainRoxie]=10000*alles[mainRoxie]/(alles[mainRoxie][len(alles[mainRoxie])/2])
+        # =============================================================================
+        # Normalizes all the profiles (except the main field) to the main field A1 or B1 depending on whether the magnet is Normal or Skew. Then normalizes the Main Field to its maximum
+        # =============================================================================
+        
+        
+        
+        
+        
+        # =============================================================================
+        # Saves both df´s            
+        # =============================================================================
+            filename=fileroxie.split(".")[0]
+            alles.to_excel(file+"\\"+filename+"_Roxie_MP.xlsx")
+            MP.to_excel(file+"\\"+filename+"_Roxie_MP_Centre.xlsx")
+        # =============================================================================
+        # Saves both df´s 
+        # =============================================================================
+            
+        
+            s=RX.replace('/','')
+            s=s.replace('NORMAL 3D INTEGRAL RELATIVE MULTIPOLES (1.D-4):','Integrado')
+            s=s.replace('SKEW 3D INTEGRAL RELATIVE MULTIPOLES (1.D-4):','Integrado')
+            # s=s.replace('CALLING PLOTS SIB','Integrado')
+            
+        
+            integ_b=[]
+            for mp in s.split("Integrado")[1].replace("\n","").split(":")[1:16]:
+                integ_b=integ_b+[float(mp.split("b")[0])]
+            
+            integ_a=[]
+            for mp in s.split("Integrado")[2].replace("\n","").split(":")[1:16]:
+                integ_a=integ_a+[float(mp.split("a")[0])]
+            
+            integ=integ_b+integ_a
+            
+            s=RX.replace('/','')
+            a=s.split("\n")
+            for line in a:
+                if "3D REFERENCE MAIN FIELD (T)" in line:
+                    intfield=float(line.split(" ")[-1])
+                elif "MAGNETIC LENGTH (mm)" in line:
+                    maglength=float(line.split(" ")[-1])/1000
+
+            integmain=intfield*maglength
+        
+        elif bidi==True:
+        
+            s=RX.replace('/','')
+            s=s.replace('NORMAL 3D INTEGRAL RELATIVE MULTIPOLES (1.D-4):','Integrado')
+            s=s.replace('SKEW 3D INTEGRAL RELATIVE MULTIPOLES (1.D-4):','Integrado')
+            # s=s.replace('CALLING PLOTS SIB','Integrado')
+            
+        
+            integ_b=[]
+            for mp in s.split("Integrado")[1].replace("\n","").split(":")[1:16]:
+                integ_b=integ_b+[float(mp.split("b")[0])]
+            
+            integ_a=[]
+            for mp in s.split("Integrado")[2].replace("\n","").split(":")[1:16]:
+                integ_a=integ_a+[float(mp.split("a")[0])]
+            
+            integ=integ_b+integ_a
+            
+            a=s.split("\n")
+            for line in a:
+                if "3D REFERENCE MAIN FIELD (T)" in line:
+                    integmain=float(line.split(" ")[-1])
+            MP=pd.DataFrame()
+            alles=pd.DataFrame()
+    
+        return [MP,alles,integ,integmain]
     
 def SelectRoxie(iron,inner,skew):
         """

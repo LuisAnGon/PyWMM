@@ -22,7 +22,7 @@ from Postprocessing_Functions_RCA_Raw import RotatingCoilAnalysisTurn, Continuou
 # Takes manually the location of the folder with the data In each folder there are sub folders corresponding to each position along the magnet
 # =============================================================================
 
-folder=r'C:\PyWMM-Medidas Elytt\MCBXFB02\MCBXFB_PP-Piotr-Crosscheck_Outer_Iron_600_20220519_145829'
+folder=r'C:\PyWMM-Medidas Elytt\MCBXFB02\MCBXFB_PP-Piotr-Crosscheck_Inner_Iron_600_20220519_104910'
 nombre=folder.split("\\")[-1] #Folder name
 shimpath=r"C:\PyWMM\Shimming"
 
@@ -177,14 +177,14 @@ i_pos=1
 
 for pos in list(rawfile['PosN'].unique()):
 # for pos in [3]:
-    print(pos)
+    # print(pos)
     df=rawfile[rawfile["PosN"]==pos]
     for Current in list(rawfile['Iset(A)'].unique()):
-        print(Current)
+        # print(Current)
         dfc=df[df["Iset(A)"]==Current]
         for rot in list(rawfile['Speed(rpm)'].unique()):
         # for rot in [60]:
-            print(rot)
+            # print(rot)
             dfr=dfc[dfc["Speed(rpm)"]==rot]
         
             Av=ContinuousRotatingCoilAnalysisRaw (dfr, knAbs, knCmp, MagOrder, Rref, AnalysisOptions,coil,MainField,rot,CalibAng) #Get the average of all the Rotation coil turns
@@ -365,7 +365,7 @@ print("Roxie Folder: ", RoxieFolder)
 # =============================================================================
 # Reads the simulations performed with Roxie
 # =============================================================================
-[RoxieMP,Roxieall]=ReadRoxie(RoxieFolder,norm=False,skew=int(MainField=="SKEW"))
+[RoxieMP,Roxieall,RoxieInteg,RoxieMainInteg]=ReadRoxie(RoxieFolder,norm=False,skew=int(MainField=="SKEW"))
 
 #If We have a long magnet MCBXFA, the Roxie file must be extended +1m
 if tipo=="A":
@@ -398,12 +398,13 @@ if sum(RoxieMP.index.isin(['A16 Roxie']))>0:
 RoxieMP.index=["B1","b2","b3","b4","b5","b6","b7","b8","b9","b10","b11","b12","b13","b14","b15",
                "A1","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15"]
 pos=Av.loc[["B1","b2","b3","b4","b5","b6","b7","b8","b9","b10","b11","b12","b13","b14","b15",
-            "A1","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15"]][Av.columns[int(len(Av.columns)/2)]]
+            "A1","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15"]][Av.columns[int((len(Av.columns)/2)-1)]]
    
     
 comp_Roxie_Meas=pd.concat([RoxieMP,pos],axis=1)
 comp_Roxie_Meas=comp_Roxie_Meas.round(6)
-comp_Roxie_Meas.columns=['Roxie','MM']
+comp_Roxie_Meas.columns=['Roxie_Middle','MM_Middle']
+
 # print("Comp_Roxie_Meas:")
 # print(comp_Roxie_Meas)
 
@@ -448,13 +449,33 @@ elif mainRoxie=="A1":
 # =============================================================================
 
 
-[shimMP,shimall]=ReadRoxie(RoxieFolder,norm=False,skew=int(MainField=="SKEW"))
+[shimMP,shimall,shiminteg,shimmaininteg]=ReadRoxie(RoxieFolder,norm=False,skew=int(MainField=="SKEW"),bidi=True)
 
-shimMP.index=["B1","b2","b3","b4","b5","b6","b7","b8","b9","b10","b11","b12","b13","b14","b15",
-               "A1","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15"]
+indexlist=["B1","b2","b3","b4","b5","b6","b7","b8","b9","b10","b11","b12","b13","b14","b15",
+                "A1","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15"]
 
-comp_Roxie_Meas_shim=pd.concat([comp_Roxie_Meas,shimMP],axis=1)
-comp_Roxie_Meas_shim.columns=["Roxie","MM","Shim"]
+# comp_Roxie_Meas_shim=pd.concat([comp_Roxie_Meas,shimMP],axis=1)
+# comp_Roxie_Meas_shim.columns=["Roxie","MM","Shim"]
+
+comp_Roxie_Meas_shim=comp_Roxie_Meas
+
+comp_Roxie_Meas_shim["Shim_Middle"]=shiminteg
+
+comp_Roxie_Meas_shim["Integrated_Roxie"]=RoxieInteg
+comp_Roxie_Meas_shim["Integrated_MM"]=list(Av["Integral"].loc[indexlist])
+
+
+if MainField=="NORMAL":
+    comp_Roxie_Meas_shim["Integrated_Roxie"].loc["B1"]=RoxieMainInteg
+    comp_Roxie_Meas_shim["Integrated_MM"].loc["B1"]=Av["Integral"].loc["Main Field [mT]"]
+elif MainField=="SKEW":
+    comp_Roxie_Meas_shim["Integrated_Roxie"].loc["A1"]=RoxieMainInteg
+    comp_Roxie_Meas_shim["Integrated_MM"].loc["A1"]=Av["Integral"].loc["Main Field [mT]"]
+    
+
+
+
+
 
 print("Comp_Roxie_Meas:")
 print(comp_Roxie_Meas_shim)
@@ -470,9 +491,9 @@ comp_Roxie_Meas_shim.to_excel(folder+'\\Roxie_vs_MM_vs_Shim_MiddlePoint '+nombre
 
 fig, axs = plt.subplots(2,figsize=(5,7))
 x=[2,3,4,5,6,7,8,9,10,11,12,13,14,15]
-axs[0].bar([a-0.25 for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Shim"],label="Shimming",width=0.3,color="b")
-axs[0].bar([a+0.25 for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Roxie"],label="Roxie",width=0.3,color="g")
-axs[0].bar([a for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["MM"],label="MM",width=0.5,color="r")
+axs[0].bar([a-0.25 for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Shim_Middle"],label="Shimming",width=0.3,color="b")
+axs[0].bar([a+0.25 for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Roxie_Middle"],label="Roxie",width=0.3,color="g")
+axs[0].bar([a for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["MM_Middle"],label="MM",width=0.5,color="r")
 
 axs[0].set_title("Comparison Roxie-MM-Shimming ")
 axs[0].grid(linestyle='--', linewidth=0.5)
@@ -483,9 +504,9 @@ axs[0].set_ylabel("bn")
 axs[0].legend()
 
 
-axs[1].bar([a-0.25 for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Shim"],label="Shimming",width=0.3,color="b")
-axs[1].bar([a+0.25 for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Roxie"],label="Roxie",width=0.3,color="g")
-axs[1].bar([a for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["MM"],label="MM",width=0.5,color="r")
+axs[1].bar([a-0.25 for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Shim_Middle"],label="Shimming",width=0.3,color="b")
+axs[1].bar([a+0.25 for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Roxie_Middle"],label="Roxie",width=0.3,color="g")
+axs[1].bar([a for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["MM_Middle"],label="MM",width=0.5,color="r")
 
 #axs[1].set_title("Comparison Roxie-MM Skew Multipoles")
 axs[1].grid(linestyle='--', linewidth=0.5)
@@ -512,30 +533,36 @@ if mainRoxie=="A1":
     l3="a3"
     l5="a5"
     
+if mainRoxie=="B1":
+    roxie_int_Av_N=roxie_int_Av_NN
+    Roxie_MM_N=Roxie_MM_NN
+if mainRoxie=="A1":
+    roxie_int_Av_N=roxie_int_Av_NS
+    Roxie_MM_N=Roxie_MM_NS
 
 fig, axs = plt.subplots(3,figsize=(5,7))
-axs[0].plot(roxie_int_Av_NN.position,Roxie_MM_NN[u1+" Roxie"],label="Roxie "+u1,marker=".")
-axs[0].plot(roxie_int_Av_NN.position,Roxie_MM_NN[u1],label="MM "+u1,marker=".")
-axs[0].set_xticks(list(roxie_int_Av_NN.position))
-axs[0].set_xticks([it+300 for it in list(roxie_int_Av_NN.position)]+[it-300 for it in list(roxie_int_Av_NN.position)],minor=True)
+axs[0].plot(roxie_int_Av_N.position,Roxie_MM_N[u1+" Roxie"],label="Roxie "+u1,marker=".")
+axs[0].plot(roxie_int_Av_N.position,Roxie_MM_N[u1],label="MM "+u1,marker=".")
+axs[0].set_xticks(list(roxie_int_Av_N.position))
+axs[0].set_xticks([it+300 for it in list(roxie_int_Av_N.position)]+[it-300 for it in list(roxie_int_Av_N.position)],minor=True)
 axs[0].xaxis.grid(False, which='major')
 axs[0].xaxis.grid(True, linestyle='--', linewidth=0.5, which='minor')
 axs[0].set_ylabel(u1)
 axs[0].legend()
 
-axs[1].plot(roxie_int_Av_NN.position,Roxie_MM_NN[u3+" Roxie"],label="Roxie "+l3,marker=".")
-axs[1].plot(roxie_int_Av_NN.position,Roxie_MM_NN[l3],label="MM "+l3,marker=".")
-axs[1].set_xticks(list(roxie_int_Av_NN.position))
-axs[1].set_xticks([it+300 for it in list(roxie_int_Av_NN.position)]+[it-300 for it in list(roxie_int_Av_NN.position)],minor=True)
+axs[1].plot(roxie_int_Av_N.position,Roxie_MM_N[u3+" Roxie"],label="Roxie "+l3,marker=".")
+axs[1].plot(roxie_int_Av_N.position,Roxie_MM_N[l3],label="MM "+l3,marker=".")
+axs[1].set_xticks(list(roxie_int_Av_N.position))
+axs[1].set_xticks([it+300 for it in list(roxie_int_Av_N.position)]+[it-300 for it in list(roxie_int_Av_N.position)],minor=True)
 axs[1].xaxis.grid(False, which='major')
 axs[1].xaxis.grid(True, linestyle='--', linewidth=0.5, which='minor')
 axs[1].set_ylabel(l3)
 axs[1].legend()
 
-axs[2].plot(roxie_int_Av_NN.position,Roxie_MM_NN[u5+" Roxie"],label="Roxie "+l5,marker=".")
-axs[2].plot(roxie_int_Av_NN.position,Roxie_MM_NN[l5],label="MM "+l5,marker=".")
-axs[2].set_xticks(list(roxie_int_Av_NN.position))
-axs[2].set_xticks([it+300 for it in list(roxie_int_Av_NN.position)]+[it-300 for it in list(roxie_int_Av_NN.position)],minor=True)
+axs[2].plot(roxie_int_Av_N.position,Roxie_MM_N[u5+" Roxie"],label="Roxie "+l5,marker=".")
+axs[2].plot(roxie_int_Av_N.position,Roxie_MM_N[l5],label="MM "+l5,marker=".")
+axs[2].set_xticks(list(roxie_int_Av_N.position))
+axs[2].set_xticks([it+300 for it in list(roxie_int_Av_N.position)]+[it-300 for it in list(roxie_int_Av_N.position)],minor=True)
 axs[2].xaxis.grid(False, which='major')
 axs[2].xaxis.grid(True, linestyle='--', linewidth=0.5, which='minor')
 axs[2].set_ylabel(l5)
