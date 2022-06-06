@@ -22,7 +22,7 @@ from Postprocessing_Functions_RCA_Raw import RotatingCoilAnalysisTurn, Continuou
 # Takes manually the location of the folder with the data In each folder there are sub folders corresponding to each position along the magnet
 # =============================================================================
 
-folder=r'C:\PyWMM\Debugg Piotr\MCBXFA_PP-Piotr-Crosscheck_Inner_Iron_600_20220519_104910'
+folder=r'C:\PyWMM-Medidas Elytt\MCBXFB02\MCBXFB_PP-Piotr-Crosscheck_Outer_Iron_600_20220519_145829'
 nombre=folder.split("\\")[-1] #Folder name
 shimpath=r"C:\PyWMM\Shimming"
 
@@ -34,6 +34,8 @@ shimpath=r"C:\PyWMM\Shimming"
 for name in os.listdir(folder):
    if name.split("_")[-1]=="raw.txt":
        rawname=folder+"\\"+name
+   elif name.split(".")[-1]=="output":
+       shimname=folder+"\\"+name
 
 newrawname=folder+"\\newraw.txt"
 
@@ -373,10 +375,6 @@ if tipo=="A":
     newposition=positionneg+positionpos
     Roxieall.position=newposition
     
-
-
-
-
 # =============================================================================
 # Reads the simulations performed with Roxie
 # =============================================================================
@@ -450,10 +448,13 @@ elif mainRoxie=="A1":
 # =============================================================================
 
 
+[shimMP,shimall]=ReadRoxie(RoxieFolder,norm=False,skew=int(MainField=="SKEW"))
 
+shimMP.index=["B1","b2","b3","b4","b5","b6","b7","b8","b9","b10","b11","b12","b13","b14","b15",
+               "A1","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15"]
 
-shim=ReadShim(shimpath)
-comp_Roxie_Meas_shim=pd.concat([comp_Roxie_Meas,shim],axis=1)
+comp_Roxie_Meas_shim=pd.concat([comp_Roxie_Meas,shimMP],axis=1)
+comp_Roxie_Meas_shim.columns=["Roxie","MM","Shim"]
 
 print("Comp_Roxie_Meas:")
 print(comp_Roxie_Meas_shim)

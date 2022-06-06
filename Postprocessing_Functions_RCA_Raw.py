@@ -675,7 +675,7 @@ def SelectRoxie(iron,inner,skew):
             ironstr="No Iron"
     
         if inner==1:
-            innerstr="Inner Dipole Short"
+            innerstr="Inner Dipole"
         else:
             innerstr="Outer Dipole"
     
