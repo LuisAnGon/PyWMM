@@ -78,25 +78,26 @@ def ContinuousRotatingCoilAnalysisRaw (df, knAbs, knCmp, MagOrder, Rref, Analysi
 
         i=0 
         for turn in df.columns:
-            # print("*********")
-            turn_abs=df[turn].iloc[17:529]
-            # print(len(turn_abs))
-            turn_abs=turn_abs.reindex(index=np.roll(turn_abs.index,1))#correct data (shift one step - until introduced in FFMM)
+            turn_absh=df[turn].iloc[17:529]
+            # turn_abs.to_excel(r'C:\PyWMM\Debugg Piotr\aver1.xlsx')
+            # turn_absh=turn_abs.shift(1)#correct data (shift one step - until introduced in FFMM)
+            # turn_absh.iloc[0]=turn_abs.iloc[len(turn_abs)-1]
             
-            turn_cmp=df[turn].iloc[529:1041]
-            # print(len(turn_cmp))
-            turn_cmp=turn_cmp.reindex(index=np.roll(turn_cmp.index,1))#correct data (shift one step - until introduced in FFMM)
+            turn_cmph=df[turn].iloc[529:1041]
+            # turn_cmph=turn_cmp.shift(1)#correct data (shift one step - until introduced in FFMM)
+            # turn_cmph.iloc[0]=turn_cmp.iloc[len(turn_cmp)-1]
             
-            turn_dt=df[turn].iloc[1041:len(df[turn])]
-            # print(len(turn_dt))
-            turn_dt=turn_dt.reindex(index=np.roll(turn_dt.index,1))#correct data (shift one step - until introduced in FFMM)
-            
+            turn_dth=df[turn].iloc[1041:len(df[turn])]
+            # turn_dth=turn_dt.shift(1)#correct data (shift one step - until introduced in FFMM)
+            # turn_dth.iloc[0]=turn_dt.iloc[len(turn_dt)-1]
+
             
             
             
             if rot<0:
-                turn_abs=-turn_abs.iloc[::-1]
-                turn_cmp=-turn_cmp.iloc[::-1]
+                turn_absh=-turn_absh.iloc[::-1]
+                turn_cmph=-turn_cmph.iloc[::-1]
+                turn_dth=-turn_dth.iloc[::-1]
                 # turn_abs=turn_abs
                 # turn_cmp=turn_cmp
             
@@ -107,14 +108,14 @@ def ContinuousRotatingCoilAnalysisRaw (df, knAbs, knCmp, MagOrder, Rref, Analysi
                 
                 #Drift Piotr
                 
-                time=turn_dt.sum()
-                sumabs=turn_abs.sum()
-                sumcmp=turn_cmp.sum() 
+                time=turn_dth.sum()
+                sumabs=turn_absh.sum()
+                sumcmp=turn_cmph.sum() 
                 
                 
-                Fabs=np.array(turn_abs)-(sumabs/time)*np.array(turn_dt)   
+                Fabs=np.array(turn_absh)-(sumabs/time)*np.array(turn_dth)   
                 Fabs=Fabs.cumsum()
-                Fcmp=np.array(turn_cmp)-(sumcmp/time)*np.array(turn_dt)
+                Fcmp=np.array(turn_cmph)-(sumcmp/time)*np.array(turn_dth)
                 Fcmp=Fcmp.cumsum()
                 
                 # Drift Luis
@@ -123,8 +124,8 @@ def ContinuousRotatingCoilAnalysisRaw (df, knAbs, knCmp, MagOrder, Rref, Analysi
                 # Fcmp = (turn_cmp-turn_cmp.mean()).cumsum()-turn_cmp.cumsum().mean()
             else:
                 
-                Fabs=turn_abs.cumsum()
-                Fcmp=turn_abs.cumsum()     
+                Fabs=turn_absh.cumsum()
+                Fcmp=turn_cmph.cumsum()     
     # =============================================================================
     #         Drift Correction of each turn
     # =============================================================================
@@ -138,7 +139,8 @@ def ContinuousRotatingCoilAnalysisRaw (df, knAbs, knCmp, MagOrder, Rref, Analysi
              x,
              y,
              Ang]=RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisOptions,skew,CalibAng)
-            print ("Ang= ",Ang)
+            # print ("Ang= ",Ang)
+            
     # =============================================================================
     #         Analysis of each turn
     # =============================================================================       
@@ -276,6 +278,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
         
         Ang=PhiOut*1000
         Ang=Ang-CalibAng
+        
         
         # print ("PhiOut= ",PhiOut)
         B_Main_Rotated = (np.exp(-1j*(PhiOut)*MagOrder) * (c_sens_abs[MagOrder-1]))
@@ -683,7 +686,9 @@ def SelectRoxie(iron,inner,skew):
     # =============================================================================
     #     Assembles the path string
     # =============================================================================
+        
         path=r"C:\PyWMM\ROXIE-MCBXFB"+"\\"+ironstr+"\\"+ironstr+" "+innerstr+r"\MCBXFB"+" "+ironstr+" "+innerstr+" "+skewstr
+
     # =============================================================================
         return path
     
@@ -713,7 +718,7 @@ def SelectRoxieManual():
             
         inner=input("Inner or Outer?").upper()
         if inner=="INNER":
-            innerstr="Inner Dipole Short"
+            innerstr="Inner Dipole"
         elif inner=="OUTER":
             innerstr="Outer Dipole"
         else:
@@ -732,7 +737,7 @@ def SelectRoxieManual():
     # =============================================================================
     #     Assembles the path string
     # =============================================================================
-        path=r"C:\ROXIE-MCBXFB"+"\\"+ironstr+"\\"+ironstr+" "+innerstr+r"\MCBXFB"+" "+ironstr+" "+innerstr+" "+skewstr
+        path=r"C:\PyWMM\ROXIE-MCBXFB_New"+"\\"+ironstr+"\\"+ironstr+" "+innerstr+r"\MCBXFB"+" "+ironstr+" "+innerstr+" "+skewstr
     # =============================================================================
     
         return path
@@ -1008,3 +1013,6 @@ def Parameters(path):
         return(p_turn,num_FDI,MagOrder,Rref,AnalysisOptions)
     
     
+def ReadShim(folder):
+    shim=pd.read_csv(folder+"\\shim.txt",index_col=0,sep="\t")
+    return shim

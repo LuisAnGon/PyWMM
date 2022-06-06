@@ -15,15 +15,16 @@ import cmath
 import math
 import os
 import collections
-from Postprocessing_Functions_RCA_Raw import RotatingCoilAnalysisTurn, ContinuousRotatingCoilAnalysisRaw, ReadRoxie, interpolate_Roxie_MM, GetSensitivities,SelectRoxie
+from Postprocessing_Functions_RCA_Raw import RotatingCoilAnalysisTurn, ContinuousRotatingCoilAnalysisRaw, ReadRoxie, interpolate_Roxie_MM, GetSensitivities,SelectRoxie,ReadShim
 
 
 # =============================================================================
 # Takes manually the location of the folder with the data In each folder there are sub folders corresponding to each position along the magnet
 # =============================================================================
 
-folder=r'C:\PyWMM\Debugg Piotr\MCBXFB_PP-Piotr-Crosscheck_Inner_Iron_600_20220519_104910'
+folder=r'C:\PyWMM\Debugg Piotr\MCBXFA_PP-Piotr-Crosscheck_Inner_Iron_600_20220519_104910'
 nombre=folder.split("\\")[-1] #Folder name
+shimpath=r"C:\PyWMM\Shimming"
 
 
 # =============================================================================
@@ -161,7 +162,8 @@ senspath=r'C:\PyWMM\rca_calibration_data\Kn_DQS_5_24_16_250_115x650_0001_A_AC.tx
 # Reads the sensitivities from The folder containig the .py code
 # =============================================================================
 
-
+poscurr=[]
+negcurr=[]
 Av_pos=pd.DataFrame()
 Av_neg=pd.DataFrame()
 Av_pos_rot=pd.DataFrame()
@@ -172,12 +174,14 @@ i_pos=1
 
 
 for pos in list(rawfile['PosN'].unique()):
+# for pos in [3]:
     print(pos)
     df=rawfile[rawfile["PosN"]==pos]
     for Current in list(rawfile['Iset(A)'].unique()):
         print(Current)
         dfc=df[df["Iset(A)"]==Current]
         for rot in list(rawfile['Speed(rpm)'].unique()):
+        # for rot in [60]:
             print(rot)
             dfr=dfc[dfc["Speed(rpm)"]==rot]
         
@@ -192,21 +196,27 @@ for pos in list(rawfile['PosN'].unique()):
     
             if Current>0:
                 Av_pos=pd.concat([Av_pos,Av],axis=1)
+                poscurr=poscurr+[float(dfr["Imeas(A)"].mean())]
                     
                     
             if Current<0: 
                 Av_neg=pd.concat([Av_neg,Av],axis=1)
+                negcurr=negcurr+[-1*(float(dfr["Imeas(A)"].mean()))]
+            
+            
                 
         # =============================================================================
         #  Sets the positions “paso” as the column “position” and Concatenates df to Av_pos or Av_neg depending on the signal of the current
         # =============================================================================
-            
-
+print(len(poscurr))
+print(len(Av_pos.columns))
+          
+Av_pos.loc["Current [A]"]=poscurr
 i=0
 for item in paso:
     Av_pos_rot[item]=(Av_pos.iloc[:,i]+Av_pos.iloc[:,i+1])/2
     i=i+2
-
+Av_neg.loc["Current [A]"]=negcurr
 i=0
 for item in paso:
     Av_neg_rot[item]=(Av_neg.iloc[:,i]+Av_neg.iloc[:,i+1])/2
@@ -301,15 +311,33 @@ elif MainField=="NORMAL":
 
 
 # Av.rename(index={mainRoxie:"Main Field [mT]"},inplace=True)
-Av.loc["Current [A]"]=[5]*len(paso)
+# Av.loc["Current [A]"]=[5]*len(paso)
 Av.loc["Main Field [mT]"]=Av.loc[mainRoxie]*1000
-Av.loc["Transfer Function [mT/A"]=Av.loc["Main Field [mT]"]/Av.loc["Current [A]"]
+Av.loc["Transfer Function [mT/A]"]=Av.loc["Main Field [mT]"]/Av.loc["Current [A]"]
+
+
 
 
 
 integrField=sum(Av.loc["Main Field [mT]"])*(int(coil)/1000)
 Av.loc["%"]=Av.loc["Main Field [mT]"]*int(coil)/1000/integrField
 
+#Last correction of the angle due to the fact that the FFMM data has a cyclic shift of +1 so we must correct the effect of such +1 value of the encoder, which is (2*np.pi)/512
+Angle_Corr=1000*(2*np.pi)/512
+Av.loc["Angle (Applied Calib) [mrad]"]=Av.loc["Angle (Applied Calib) [mrad]"]-Angle_Corr
+
+Av["Integral"]=[""]*len(Av)
+
+for row in ["Current [A]","Main Field [mT]","b2","b3","b4","b5","b6","b7","b8","b9","b10","b11","b12","b13","b14","b15","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15"]:
+    if row=="Main Field [mT]":    
+        Av["Integral"].loc[row]=sum(Av[paso[1:][:-1]].loc[row])*int(coil)/1000
+    else:
+        sp1=Av[paso[1:][:-1]].loc[row]
+        sp2=Av[paso[1:][:-1]].loc["%"]
+        Av["Integral"].loc[row]=np.dot(sp1,sp2)
+
+Av["Integral"].loc["Transfer Function [mT/A]"]=Av["Integral"].loc["Main Field [mT]"]/Av["Integral"].loc["Current [A]"]
+  
 
 Av.to_excel(folder+"\\Summary_MM_"+nombre+".xlsx")
 
@@ -378,9 +406,10 @@ pos=Av.loc[["B1","b2","b3","b4","b5","b6","b7","b8","b9","b10","b11","b12","b13"
 comp_Roxie_Meas=pd.concat([RoxieMP,pos],axis=1)
 comp_Roxie_Meas=comp_Roxie_Meas.round(6)
 comp_Roxie_Meas.columns=['Roxie','MM']
-print("Comp_Roxie_Meas",comp_Roxie_Meas)
+# print("Comp_Roxie_Meas:")
+# print(comp_Roxie_Meas)
 
-comp_Roxie_Meas.to_excel(folder+'\\Roxie_vs_MM_MiddlePoint '+nombre+'.xlsx')
+# comp_Roxie_Meas.to_excel(folder+'\\Roxie_vs_MM_MiddlePoint '+nombre+'.xlsx')
 # =============================================================================
 # With MP Creates Comp_Roxie_Meas: A df to compare the values of Roxie in the middle and the measurement in the middle. Then saves it
 # =============================================================================
@@ -422,6 +451,17 @@ elif mainRoxie=="A1":
 
 
 
+
+shim=ReadShim(shimpath)
+comp_Roxie_Meas_shim=pd.concat([comp_Roxie_Meas,shim],axis=1)
+
+print("Comp_Roxie_Meas:")
+print(comp_Roxie_Meas_shim)
+comp_Roxie_Meas_shim.to_excel(folder+'\\Roxie_vs_MM_vs_Shim_MiddlePoint '+nombre+'.xlsx')
+
+
+
+
 #*****************************************************************************************************
 #****************************************PLOTTING****************************************
 #*****************************************************************************************************
@@ -429,9 +469,11 @@ elif mainRoxie=="A1":
 
 fig, axs = plt.subplots(2,figsize=(5,7))
 x=[2,3,4,5,6,7,8,9,10,11,12,13,14,15]
-axs[0].bar([a-0.15 for a in x],comp_Roxie_Meas.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Roxie"],label="Roxie",width=0.3)
-axs[0].bar([a+0.15 for a in x],comp_Roxie_Meas.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["MM"],label="MM",width=0.3)
-axs[0].set_title("Comparison Roxie-MM ")
+axs[0].bar([a-0.25 for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Shim"],label="Shimming",width=0.3,color="b")
+axs[0].bar([a+0.25 for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Roxie"],label="Roxie",width=0.3,color="g")
+axs[0].bar([a for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["MM"],label="MM",width=0.5,color="r")
+
+axs[0].set_title("Comparison Roxie-MM-Shimming ")
 axs[0].grid(linestyle='--', linewidth=0.5)
 axs[0].set_xticks([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
 axs[0].set_yticks([-20,-15,-10,-5,0,5,10,15,20])
@@ -440,8 +482,10 @@ axs[0].set_ylabel("bn")
 axs[0].legend()
 
 
-axs[1].bar([a-0.15 for a in x],comp_Roxie_Meas.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Roxie"],label="Roxie",width=0.3)
-axs[1].bar([a+0.15 for a in x],comp_Roxie_Meas.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["MM"],label="MM",width=0.3)
+axs[1].bar([a-0.25 for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Shim"],label="Shimming",width=0.3,color="b")
+axs[1].bar([a+0.25 for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Roxie"],label="Roxie",width=0.3,color="g")
+axs[1].bar([a for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["MM"],label="MM",width=0.5,color="r")
+
 #axs[1].set_title("Comparison Roxie-MM Skew Multipoles")
 axs[1].grid(linestyle='--', linewidth=0.5)
 axs[1].set_xticks([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
