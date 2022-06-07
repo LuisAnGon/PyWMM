@@ -55,6 +55,8 @@ with open(newrawname, "w") as ff:
 
 rawfile=pd.read_csv(newrawname, sep='\t', header=None)
 
+os.remove(newrawname)
+
 headerlst=list(rawfile.columns)
 
 newheader=head+headerlst[len(head):]
@@ -62,7 +64,7 @@ newheader=head+headerlst[len(head):]
 # add the new header line
 rawfile.columns=newheader
 
-rawfile.to_excel(newrawname+".xlsx")
+rawfile.to_excel(folder+"\\Excel_Raw.xlsx")
 
 # rawfile_normrot=rawfile[rawfile["Speed(rpm)"]>0]
 # rawfile_normrot.to_csv(folder+"norm.txt",sep="\t")
