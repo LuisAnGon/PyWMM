@@ -36,37 +36,11 @@ import scipy
 import io
 import matplotlib.pyplot as plt
 import os
-import pyperclip
+# import pyperclip
 
 
 def ContinuousRotatingCoilAnalysisRaw (df, knAbs, knCmp, MagOrder, Rref, AnalysisOptions,step,skew,rot,CalibAng):
         
-    # # =============================================================================
-    # #    Takes the fluxes data and puts it in a df
-    # # =============================================================================
-    #     # df = pd.read_csv(datafile, sep='\s+',names=['Time','df_abs','df_cmp','curr'])
-    #     df = pd.read_csv(datafile, sep='\s+',names=['df_abs','time1','df_cmp','time2'])
-    # # =============================================================================
-    # #    Takes the fluxes data and puts it in a df
-    # # =============================================================================
-        
-        
-    # # =============================================================================
-    # #     Separates in turns
-    # # =============================================================================
-    #     turns=len(df)/p_turn
-    
-    #     turnlst=[]
-    #     i=0
-    
-    #     for turn in np.arange(int(turns)):
-        
-    #         turn_data=df.iloc[i*p_turn:(i+1)*p_turn].reset_index()
-    #         turnlst.append(turn_data)
-    #         i=i+1
-    # # =============================================================================
-    # #     Separates in turns
-    # # =============================================================================
         
         
         
@@ -78,32 +52,18 @@ def ContinuousRotatingCoilAnalysisRaw (df, knAbs, knCmp, MagOrder, Rref, Analysi
 
         i=0 
         for turn in df.columns:
-            turn_absh=df[turn].iloc[17:529]
-            # turn_abs.to_excel(r'C:\PyWMM\Debugg Piotr\aver1.xlsx')
-            # turn_absh=turn_abs.shift(1)#correct data (shift one step - until introduced in FFMM)
-            # turn_absh.iloc[0]=turn_abs.iloc[len(turn_abs)-1]
-            
-            turn_cmph=df[turn].iloc[529:1041]
-            # turn_cmph=turn_cmp.shift(1)#correct data (shift one step - until introduced in FFMM)
-            # turn_cmph.iloc[0]=turn_cmp.iloc[len(turn_cmp)-1]
-            
+            turn_absh=df[turn].iloc[17:529]            
+            turn_cmph=df[turn].iloc[529:1041]            
             turn_dth=df[turn].iloc[1041:len(df[turn])]
-            # turn_dth=turn_dt.shift(1)#correct data (shift one step - until introduced in FFMM)
-            # turn_dth.iloc[0]=turn_dt.iloc[len(turn_dt)-1]
 
-            
-            
-            
             if rot<0:
                 turn_absh=-turn_absh.iloc[::-1]
                 turn_cmph=-turn_cmph.iloc[::-1]
                 turn_dth=-turn_dth.iloc[::-1]
-                # turn_abs=turn_abs
-                # turn_cmp=turn_cmp
             
     # =============================================================================
     #         Drift Correction of each turn
-    # =============================================================================
+
             if 'dri'in AnalysisOptions:
                 
                 #Drift Piotr
@@ -126,22 +86,20 @@ def ContinuousRotatingCoilAnalysisRaw (df, knAbs, knCmp, MagOrder, Rref, Analysi
                 
                 Fabs=turn_absh.cumsum()
                 Fcmp=turn_cmph.cumsum()     
-    # =============================================================================
+
     #         Drift Correction of each turn
     # =============================================================================
             
             
     # =============================================================================
     #         Analysis of each turn
-    # =============================================================================       
+      
             [Norm_cmp,
              Skew_cmp,
              x,
              y,
              Ang]=RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisOptions,skew,CalibAng)
-            # print ("Ang= ",Ang)
-            
-    # =============================================================================
+
     #         Analysis of each turn
     # =============================================================================       
         
@@ -160,7 +118,7 @@ def ContinuousRotatingCoilAnalysisRaw (df, knAbs, knCmp, MagOrder, Rref, Analysi
     #             A1
     #             ...
     #             A15
-    # =============================================================================
+
                 
             
             head=[0,Rref,x,y,Ang]        
@@ -208,7 +166,7 @@ def ContinuousRotatingCoilAnalysisRaw (df, knAbs, knCmp, MagOrder, Rref, Analysi
         
         
         turn=Header_ave.append(NCmp_ave.append(SCmp_ave))
-    # =============================================================================
+
     #     Creates a df with the shape:
     # =============================================================================
         
@@ -220,13 +178,13 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
         
     # =============================================================================
     #     Fourier transform
-    # =============================================================================
+    
         f_abs=2*fft(np.array(Fabs))/len(Fabs)
         # print("Angle_f_abs: %.64f" %(np.angle(f_abs[(MagOrder-1)])))
         f_cmp=2*fft(np.array(Fcmp))/len(Fcmp)
         f_abs=f_abs[1:16]
         f_cmp=f_cmp[1:16]
-    # =============================================================================
+        
     #     Fourier transform
     # =============================================================================
      
@@ -235,7 +193,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
         
     # =============================================================================
     #     Apply coil sensitivity
-    # =============================================================================
+
         Rref_vec=np.zeros(len(f_abs))
         
         for n in np.arange(0,len(Rref_vec)):
@@ -243,7 +201,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
         
         c_sens_abs = Rref_vec*(1/knAbs)*f_abs
         c_sens_cmp = Rref_vec*(1/knCmp)*f_cmp
-    # =============================================================================
+
     #     Apply coil sensitivity
     # =============================================================================
     
@@ -255,7 +213,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
         
     # =============================================================================
     #     Angle Correction (Apply Rotation)
-    # ============================================================================= 
+
         SignalPhase=np.angle(c_sens_abs[(MagOrder-1)])
         # print("signalPhase= ",SignalPhase)
         
@@ -299,7 +257,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
             
             c_sens_abs_rot[n]=c_sens_abs[n]*(np.exp(-1j*PhiOut*(n+1)))
             c_sens_cmp_rot[n]=c_sens_cmp[n]*(np.exp(-1j*PhiOut*(n+1)))
-    # =============================================================================
+
     #     Angle Correction (Apply Rotation)
     # ============================================================================= 
     
@@ -310,9 +268,9 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
     
     # =============================================================================
     #     Apply Bucking ratios
-    # =============================================================================
+
         Buck_ratio=abs(f_abs/f_cmp)
-    # =============================================================================
+
     #     Apply Bucking ratios
     # =============================================================================
     
@@ -322,7 +280,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
     
     # =============================================================================
     #    Center  localizations
-    # =============================================================================
+
         
         if MagOrder==1:
             p=[0,0,0,0,0,0]
@@ -370,7 +328,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
         
         
         
-    # =============================================================================
+
     #    Center  localizations
     # =============================================================================
         
@@ -380,7 +338,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
     
     # =============================================================================
     #     Feed Down
-    # =============================================================================   
+
         if 'fed'in AnalysisOptions:
         
             #Absolute C's
@@ -413,7 +371,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
         else:
             c_fd_abs=c_sens_abs_rot
             c_fd_cmp=c_sens_cmp_rot
-    # =============================================================================
+
     #     Feed Down
     # =============================================================================
         
@@ -423,7 +381,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
     
     # =============================================================================
     #     Normalization
-    # =============================================================================   
+  
         if 'nor'in AnalysisOptions: 
             c_fd_nor_cmp=np.zeros(len(c_fd_cmp)).astype("complex")
             # c_fd_nor_abs=np.zeros(len(c_fd_abs)).astype("complex")
@@ -444,7 +402,7 @@ def RotatingCoilAnalysisTurn(Fabs, Fcmp, knAbs, knCmp, MagOrder, Rref, AnalysisO
             c_fd_nor_cmp_roxie[0]=np.complex(B_Main_Rotated_norm,B_Main_Rotated_skew)
             for m in range(1,len(c_fd_nor_cmp_roxie)):     
                 c_fd_nor_cmp_roxie[m]=c_fd_cmp[m]
-    # =============================================================================
+
     #     Normalization
     # =============================================================================     
         
@@ -481,6 +439,8 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False)
             DESCRIPTION. TRUE if the ROxie results are powering both dipoles, The default is "False.
         "skew : INT, optional
             DESCRIPTION. Says if the magnet geometry is Normal or Skew The default is 0".
+        bidi : BOOL, optional
+            DESCRIOTION. Says if the ouput file to be read is 2D or 3D
     
         Returns
         -------
@@ -491,8 +451,8 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False)
             Value of the  total integrated field]
         """
         # =============================================================================
-        #     Takes the Roxie output corresponding to the measured magnet that is in the measurement folder (The Roxie output could be taken from a common folder and chosen according to the specifications given in the measurement folder name)
-        # =============================================================================
+        #     Takes the Roxie output corresponding to the measured magnet that is in the measurement folder 
+
         for item in os.listdir(file):
             if item.split(".")[-1]=="output":
                 fileroxie=item
@@ -500,8 +460,7 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False)
         RX=f.read()
         f.close()
         
-        # =============================================================================
-        #     Takes the Roxie output corresponding to the measured magnet that is in the measurement folder (The Roxie output could be taken from a common folder and chosen according to the specifications given in the measurement folder name)
+        #     Takes the Roxie output corresponding to the measured magnet that is in the measurement folder 
         # =============================================================================
 
         
@@ -511,13 +470,13 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False)
         
         # =============================================================================
         #     From the .output selects the multipole profile data columns
-        # =============================================================================
+
 
             s=RX.replace('/','')
             s=s.replace('NUMBER OF OBJECTIVES AND CONSTRAINTS','GRAPH')
             a=s.split('GRAPH')
             dflst=[]
-        # =============================================================================
+
         #     From the .output selects the multipole profile data columns
         # =============================================================================
         
@@ -527,7 +486,7 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False)
          
         # =============================================================================
         #     Creates a df with all multipole profiles (alles)
-        # =============================================================================
+
             alles=pd.DataFrame()
             malles=pd.DataFrame()
             c=0
@@ -562,11 +521,9 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False)
                 elif NS == "S":
                     alles['position']=new['position']
                     alles['A'+str(c+1)+" Roxie"]=new['Signal'].fillna(method='ffill')
-                    # malles['B'+str(odds[c])]=new['Signal']
-                    # alles['B'+str(odds[c])+'Shift_up']=new['Signal'].shift(periods=1,axis=0,fill_value=new['Signal'][0])  
-                    # alles['B'+str(odds[c])+'Shift_down']=new['Signal'].shift(periods=-1,axis=0,fill_value=new['Signal'][0])  
+
                 c+=1
-        # =============================================================================
+
         #     Creates a df with all multipole profiles (alles)
         # =============================================================================
         
@@ -575,12 +532,12 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False)
            
         # =============================================================================
         # Shifts the position columns for the profile to be centered in 0
-        # =============================================================================
+
             shift=abs(abs(alles['position'].min())-abs(alles["position"].max()))/2
             alles["position"]=alles['position']+shift
             
             alles.to_excel(file+"\\_Alles.xlsx")
-        # =============================================================================
+            
         # Shifts the position columns for the profile to be centered in 0
         # =============================================================================
             
@@ -590,33 +547,24 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False)
         
         # =============================================================================
         # Creates a df with the Multipoles in the center of the magnet (MP) already normalized
-        # =============================================================================
+
             if bothDipoles==False:
         
                 MP=10000*(alles.iloc[int(max(alles.index)/2)]/(max(alles.iloc[int(max(alles.index)/2)])))
                 MP=MP.drop(['position'],axis=0)        
-        # =============================================================================
+
         # Creates a df with the Multipoles in the center of the magnet (MP) already normalized
         # =============================================================================
-        
-        
         
         
             correction=10000/max(alles.iloc[int(max(alles.index)/2)])
             colstocorrect=list(alles.columns)
             colstocorrect.remove("position")
             alles[colstocorrect]=alles[colstocorrect]*correction
-            
-            
-        
-        
-        
-            
-        
         
         # =============================================================================
         # Normalizes all the profiles (except the main field) to the main field A1 or B1 depending on whether the magnet is Normal or Skew. Then normalizes the Main Field to its maximum
-        # =============================================================================
+       
             
             if norm:
                 print("NORM")
@@ -633,7 +581,7 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False)
                       alles[col]=10000*alles[col]/alles[mainRoxie]
                
                 alles[mainRoxie]=10000*alles[mainRoxie]/(alles[mainRoxie][len(alles[mainRoxie])/2])
-        # =============================================================================
+        
         # Normalizes all the profiles (except the main field) to the main field A1 or B1 depending on whether the magnet is Normal or Skew. Then normalizes the Main Field to its maximum
         # =============================================================================
         
@@ -643,20 +591,24 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False)
         
         # =============================================================================
         # Saves both df´s            
-        # =============================================================================
+        
             filename=fileroxie.split(".")[0]
             alles.to_excel(file+"\\"+filename+"_Roxie_MP.xlsx")
             MP.to_excel(file+"\\"+filename+"_Roxie_MP_Centre.xlsx")
-        # =============================================================================
+        
         # Saves both df´s 
         # =============================================================================
             
+        # =============================================================================
+        # reads the multipole table of the RX output and puts the values in order in a list to be exported
+        
         
             s=RX.replace('/','')
             s=s.replace('NORMAL 3D INTEGRAL RELATIVE MULTIPOLES (1.D-4):','Integrado')
             s=s.replace('SKEW 3D INTEGRAL RELATIVE MULTIPOLES (1.D-4):','Integrado')
-            # s=s.replace('CALLING PLOTS SIB','Integrado')
             
+        
+  
         
             integ_b=[]
             for mp in s.split("Integrado")[1].replace("\n","").split(":")[1:16]:
@@ -667,6 +619,13 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False)
                 integ_a=integ_a+[float(mp.split("a")[0])]
             
             integ=integ_b+integ_a
+        
+        # reads the multipole table of the RX output and puts the values in order in a list to be exported
+        # ============================================================================     
+            
+        # =============================================================================
+        # reads the value of the INTEGRATED main field in Tesla, and the magnetic length directly from the output. Then multiplies to have T·m
+            
             
             s=RX.replace('/','')
             a=s.split("\n")
@@ -677,31 +636,57 @@ def ReadRoxie(file,n=15, NS="NS",bothDipoles=False,norm=False,skew=0,bidi=False)
                     maglength=float(line.split(" ")[-1])/1000
 
             integmain=intfield*maglength
+
+        # reads the value of the INTEGRATED main field in Tesla, and the magnetic length directly from the output. Then multiplies to have T·m
+        # =============================================================================
         
-        elif bidi==True:
+        # *****************************************************************************
+        
+        elif bidi==True: # This is much shorter since we do not have to deal with scans
         
             s=RX.replace('/','')
-            s=s.replace('NORMAL 3D INTEGRAL RELATIVE MULTIPOLES (1.D-4):','Integrado')
-            s=s.replace('SKEW 3D INTEGRAL RELATIVE MULTIPOLES (1.D-4):','Integrado')
+            s=s.replace('NORMAL RELATIVE MULTIPOLES (1.D-4):','Integrado')
+            s=s.replace('SKEW RELATIVE MULTIPOLES (1.D-4):','Integrado')
             # s=s.replace('CALLING PLOTS SIB','Integrado')
             
+        # =============================================================================
+        # reads the multipole table of the RX output and puts the values in order in a list to be exported
+
         
-            integ_b=[]
+            integ_b=[] #The naming is INTEG to be consisten with the 3D case, because be read directly from the multipoles table in the output
             for mp in s.split("Integrado")[1].replace("\n","").split(":")[1:16]:
                 integ_b=integ_b+[float(mp.split("b")[0])]
             
-            integ_a=[]
+            integ_a=[] #The naming is INTEG to be consisten with the 3D case, because be read directly from the multipoles table in the output
             for mp in s.split("Integrado")[2].replace("\n","").split(":")[1:16]:
                 integ_a=integ_a+[float(mp.split("a")[0])]
             
             integ=integ_b+integ_a
             
+            ####AQUI, EN CASO DE QUE EL IMÁN ESTÉ GIRADO HAY QUE modificar los valores A^(n+1)=-Bn etc
+            ####AQUI, EN CASO DE QUE EL IMÁN ESTÉ GIRADO HAY QUE modificar los valores A^(n+1)=-Bn etc
+            ####AQUI, EN CASO DE QUE EL IMÁN ESTÉ GIRADO HAY QUE modificar los valores A^(n+1)=-Bn etc
+            ####AQUI, EN CASO DE QUE EL IMÁN ESTÉ GIRADO HAY QUE modificar los valores A^(n+1)=-Bn etc
+            
+
+        # reads the multipole table of the RX output and puts the values in order in a list to be exported
+        # =============================================================================
+         
+        
+        
+        # =============================================================================
+        # reads the value of the main field in Tesla directly from the output
+
             a=s.split("\n")
             for line in a:
-                if "3D REFERENCE MAIN FIELD (T)" in line:
-                    integmain=float(line.split(" ")[-1])
-            MP=pd.DataFrame()
-            alles=pd.DataFrame()
+                if "MAIN FIELD (T)" in line:
+                    integmain=float(line.split(" ")[-1])    
+
+        # reads the value of the main field in Tesla directly from the output
+        # =============================================================================
+            
+            MP=pd.DataFrame()#This is exported empty because it does not exist in 2D
+            alles=pd.DataFrame()#This is exported empty because it does not exist in 2D
     
         return [MP,alles,integ,integmain]
     

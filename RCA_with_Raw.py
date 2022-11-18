@@ -19,27 +19,31 @@ from Postprocessing_Functions_RCA_Raw import RotatingCoilAnalysisTurn, Continuou
 
 
 # =============================================================================
-# Takes manually the location of the folder with the data In each folder there are sub folders corresponding to each position along the magnet
-# =============================================================================
+# Takes manually the location of the folder with the data. In the folder there is a raw.txt file and a shimming.output file
 
-folder=r'C:\PyWMM-Medidas Elytt\MCBXFB02\MCBXFB_PP-Piotr-Crosscheck_Inner_Iron_600_20220519_104910'
-nombre=folder.split("\\")[-1] #Folder name
+# folder=r'C:\PyWMM-Medidas Elytt\MCBXFB02\Outer Collar'
+folder=r'C:\PyWMM-Medidas Elytt\MCBXFB02\Inner Iron'
+nombre=folder.split("\\")[-1] #Folder nameprint
 shimpath=r"C:\PyWMM\Shimming"
 
 
-# =============================================================================
-# Reads the raw file, puts is in a df and manages the header
+# Takes manually the location of the folder with the data. In the folder there is a raw.txt file and a shimming.output file
 # =============================================================================
 
 for name in os.listdir(folder):
-   if name.split("_")[-1]=="raw.txt":
+   if name.split("_")[-1]=="raw.txt": #Selects the raw file
        rawname=folder+"\\"+name
-   elif name.split(".")[-1]=="output":
+   elif name.split(".")[-1]=="output":#Selects the shimming file
        shimname=folder+"\\"+name
 
+
+# =============================================================================
+#Reads the raw file and converts it into a dataframe. A bit tricky since in the .txt there are columns without names 
+#(all those corresponding to fluxes ans time)
 newrawname=folder+"\\newraw.txt"
 
 f=open(rawname)
+print("rawname: ",rawname)
 head=f.readlines()[0]
 f.close()
 head=head.split("\t")
@@ -66,20 +70,15 @@ rawfile.columns=newheader
 
 rawfile.to_excel(folder+"\\Excel_Raw.xlsx")
 
-# rawfile_normrot=rawfile[rawfile["Speed(rpm)"]>0]
-# rawfile_normrot.to_csv(folder+"norm.txt",sep="\t")
-# rawfile_invrot=rawfile[rawfile["Speed(rpm)"]<0]
-# rawfile_invrot.to_csv(folder+"inv.txt",sep="\t")
+#Reads the raw file and converts it into a dataframe. A bit tricky since in the .txt there are columns without names 
+#(all those corresponding to flufes ans time)
+# =============================================================================
 
 
-# =============================================================================
-# Reads the raw file, puts it in a df and manages the header
-# =============================================================================
 
 # =============================================================================
 # From the Raw file defines parameters
-# =============================================================================
-# AnalysisOptions= "cel deb dri rot"
+
 AnalysisOptions= "cel deb dri nor rot fed"
 MagOrder=1
 Rref=0.05
@@ -98,15 +97,12 @@ inner=int(rawfile['Dipole'][0]=="Inner")
 outer=int(rawfile['Dipole'][0]=="Outer")
 print("inner-outer",rawfile['Dipole'][0])
 
-
-# =============================================================================
-# From the name of the folder defines: Length of Coil, Whether it is MCBXFA or MCBXFB
+# From the Raw file defines parameters
 # =============================================================================
 
-# =============================================================================
-# Define the main orientation of the field based on wether it is inner or aouter / Normal or Skew
-# =============================================================================
 
+# =============================================================================
+# Define the main orientation of the field based on wether it is inner or outer / Normal or Skew
 
 if collar==0 and iron==1:
     Rot90=0 
@@ -117,6 +113,8 @@ if collar==1 and iron==0 and inner==1 and outer==0:
 if collar==1 and iron==0 and inner==0 and outer ==1:
     Rot90=1
     print("The dipole is rotated 90 deg")
+
+Rot90=int(input("Rot90"))
     
 if Rot90==1 and inner==1:
     MainField="SKEW"
@@ -124,16 +122,18 @@ elif Rot90==0 and inner==0:
     MainField="SKEW"
 else:
     MainField="NORMAL"
-# =============================================================================
-# Define the main orientation of the field based on wether it is inner or aouter / Normal or Skew
+
+# MainField=str(input("Mainfield"))
+
+# Define the main orientation of the field based on wether it is inner or outer / Normal or Skew
 # =============================================================================
 
 print("coil",coil)
 print("Main Field: ",MainField)
 
 # =============================================================================
-# Based on above defines lists with the longitudinal positions (paso)
-# =============================================================================
+# Based on above defines lists with the longitudinal positions (paso)y
+
 if coil=="600":
     
     if tipo == "A":
@@ -151,23 +151,27 @@ elif coil == "200":
         paso=[200,  400,  600,  800, 1000, 1200, 1400,1600,1800]
         paso_middle=[800, 1000, 1200]
 
-
-# =============================================================================
 # Based on above defines lists with the longitudinal positions (paso)
 # =============================================================================
 
 
+
 # =============================================================================
 # Reads the sensitivities from The folder containig the .py code
-# =============================================================================
+
 senspath=r'C:\PyWMM\rca_calibration_data\Kn_DQS_5_24_16_250_115x650_0001_A_AC.txt'  
 [knAbs,knCmp]=GetSensitivities(senspath)
-# =============================================================================
+
 # Reads the sensitivities from The folder containig the .py code
 # =============================================================================
 
-poscurr=[]
-negcurr=[]
+
+# =============================================================================
+# Goes through the raw file and makes a continuiuous
+# =============================================================================
+
+poscurr=[]#list of positive current values. Updated for each position and rotation direction
+negcurr=[]#list of positive current values. Updated for each position and rotation direction
 Av_pos=pd.DataFrame()
 Av_neg=pd.DataFrame()
 Av_pos_rot=pd.DataFrame()
@@ -178,51 +182,65 @@ i_pos=1
 
 
 for pos in list(rawfile['PosN'].unique()):
-# for pos in [3]:
-    # print(pos)
     df=rawfile[rawfile["PosN"]==pos]
+    # print("pos:" ,pos)
     for Current in list(rawfile['Iset(A)'].unique()):
-        # print(Current)
         dfc=df[df["Iset(A)"]==Current]
+        # print("Current: " ,Current)
         for rot in list(rawfile['Speed(rpm)'].unique()):
-        # for rot in [60]:
-            # print(rot)
+            # print("Rotation: " ,rot)
             dfr=dfc[dfc["Speed(rpm)"]==rot]
+            # print(dfr["Imeas(A)"])
         
-            Av=ContinuousRotatingCoilAnalysisRaw (dfr, knAbs, knCmp, MagOrder, Rref, AnalysisOptions,coil,MainField,rot,CalibAng) #Get the average of all the Rotation coil turns
+            Av=ContinuousRotatingCoilAnalysisRaw (dfr, knAbs, knCmp, MagOrder, Rref, AnalysisOptions,coil,MainField,rot,CalibAng) #Get the average of all the 10 Rotation coil turns for this pos,curr y rot_Direction
+            # print (Av)
+        # =============================================================================
+        #  Concatenates df to Av_pos or Av_neg depending on the signal of the current
         
-        # =============================================================================
-        #  Sets the positions “paso” as the column “position” and Concatenates df to Av_pos or Av_neg depending on the signal of the current
-        # =============================================================================
             Av=Av.rename(columns={"Average":i_pos-1})
             
             
     
             if Current>0:
-                Av_pos=pd.concat([Av_pos,Av],axis=1)
-                poscurr=poscurr+[float(dfr["Imeas(A)"].mean())]
+                Av_pos=pd.concat([Av_pos,Av],axis=1) #For positive currents concatenates all turns at different positions and rotation directions
+                # print(Av_pos)
+                poscurr=poscurr+[float(dfr["Imeas(A)"].mean())] #Gets, FROM dfr, the average of the currents for all the 10 Rotation coil turns for this pos,curr y rot_Direction and concatenates in a list
+                # print(poscurr)
                     
                     
             if Current<0: 
-                Av_neg=pd.concat([Av_neg,Av],axis=1)
-                negcurr=negcurr+[-1*(float(dfr["Imeas(A)"].mean()))]
+                Av_neg=pd.concat([Av_neg,Av],axis=1)#For negative currents concatenates all turns at different positions and rotation directions
+                negcurr=negcurr+[-1*(float(dfr["Imeas(A)"].mean()))]  #Gets, FROM dfr, the average of the currents for all the 10 Rotation coil turns for this pos,curr y rot_Direction and concatenates in a list
             
             
-                
+    i_pos+=1
+        
+        #  Concatenates df to Av_pos or Av_neg depending on the signal of the current
         # =============================================================================
-        #  Sets the positions “paso” as the column “position” and Concatenates df to Av_pos or Av_neg depending on the signal of the current
-        # =============================================================================
-print(len(poscurr))
-print(len(Av_pos.columns))
-          
-Av_pos.loc["Current [A]"]=poscurr
+
+
+
+#Average          
+Av_pos.loc["Current [A]"]=poscurr #adds the row current to the Av (For positive currents)
 i=0
-for item in paso:
+
+#Av_pos and Av_neg have this shape:
+    #
+    # |    Pos 0    |    Pos 1    |    Pos 2    |    Pos 3    |    Pos 4    |
+    # |rot-60|rot 60|rot-60|rot 60|rot-60|rot 60|rot-60|rot 60|rot-60|rot 60|
+    #
+
+
+for item in paso: #for loop in steps of two in order to step from position to position. 
+                  #Adds to the emptyAv_pos_rot df columns for each position and selects the multipoles for positive an negative rotations and makes the average
     Av_pos_rot[item]=(Av_pos.iloc[:,i]+Av_pos.iloc[:,i+1])/2
     i=i+2
-Av_neg.loc["Current [A]"]=negcurr
+
+Av_neg.loc["Current [A]"]=negcurr #adds the row current to the Av (For negative currents)
 i=0
-for item in paso:
+
+for item in paso: #for loop in steps of two in order to step from position to position.
+                  #Adds to the emptyAv_pos_rot df columns for each position and selects the multipoles for positive an negative rotations and makes the average
     Av_neg_rot[item]=(Av_neg.iloc[:,i]+Av_neg.iloc[:,i+1])/2
     i=i+2
 
@@ -358,6 +376,8 @@ Av.to_excel(folder+"\\Summary_MM_"+nombre+".xlsx")
 # =============================================================================
 RoxieFolder=SelectRoxie(iron,inner,Rot90)
 print("Roxie Folder: ", RoxieFolder)
+
+# RoxieFolder=r"C:\PyWMM\ROXIE-MCBXFB\No Iron\No Iron Inner Dipole\MCBXFB No Iron Inner Dipole Rot90"
 # =============================================================================
 # Finds the Roxie file in C: according to the characyeristics of the magnet. Info taken from folder name
 # =============================================================================
@@ -451,7 +471,19 @@ elif mainRoxie=="A1":
 # =============================================================================
 
 
-[shimMP,shimall,shiminteg,shimmaininteg]=ReadRoxie(RoxieFolder,norm=False,skew=int(MainField=="SKEW"),bidi=True)
+
+
+#*****************************************************************************************************
+#****************************************COMPARISON WITH SHIMMING (It is also ROXIE) ****************************************
+#*****************************************************************************************************
+
+
+
+# shimFolder=r"C:\PyWMM-Medidas Elytt\MCBXFB02\Inner Collar"
+
+shimFolder=folder
+
+[shimMP,shimall,shiminteg,shimmaininteg]=ReadRoxie(shimFolder,norm=False,skew=int(MainField=="SKEW"),bidi=True)
 
 indexlist=["B1","b2","b3","b4","b5","b6","b7","b8","b9","b10","b11","b12","b13","b14","b15",
                 "A1","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15"]
@@ -476,11 +508,8 @@ elif MainField=="SKEW":
     
 
 
-
-
-
-print("Comp_Roxie_Meas:")
-print(comp_Roxie_Meas_shim)
+# print("Comp_Roxie_Meas:")
+# print(comp_Roxie_Meas_shim)
 comp_Roxie_Meas_shim.to_excel(folder+'\\Roxie_vs_MM_vs_Shim_MiddlePoint '+nombre+'.xlsx')
 
 
