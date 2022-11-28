@@ -18,7 +18,7 @@ import tkinter as tk
 from tkinter import filedialog
 import os
 import pyperclip
-
+import win32clipboard
 
 
 
@@ -337,5 +337,27 @@ def Differences(Av,Summ):
     difference=Av.equals(Summ)
 
     return difference
-[]
+
+def ClipboardRoxie():
+    """
+    When the values of the multipoles have been copied from the output file, 
+    run ClipboardRoxie() -> The content of the clipboard will be formatted 
+    so that a simple paste into Excel will give you two columns
+
+    Returns
+    -------
+    None.
+
+    """
+
+# get clipboard data
+    win32clipboard.OpenClipboard()
+    data = win32clipboard.GetClipboardData().replace("\r\n","").replace(" ","").replace("b","\r\nb").replace("a","\r\na").replace(":","\t")
+    win32clipboard.CloseClipboard()
+    
+    
+    win32clipboard.OpenClipboard()
+    win32clipboard.EmptyClipboard()
+    win32clipboard.SetClipboardText(data)
+    win32clipboard.CloseClipboard()
 
