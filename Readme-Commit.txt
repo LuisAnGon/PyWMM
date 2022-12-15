@@ -1,13 +1,8 @@
-Previous: Added Funtion def ClipboardRoxie():
-    """
-    When the values of the multipoles have been copied from the output file, 
-    run ClipboardRoxie() -> The content of the clipboard will be formatted 
-    so that a simple paste into Excel will give you two columns
+Previous: Added instructions tu use git bash
 
+-Fixed python warning: Replace .loc with.at
+-Improve documentation in code
+-Added modification for integration for MCBXFA, because there is a Rotating Coil overlap in the straight section.
+-in the Exported PDF change the an (or bn) for the comparison of WMM Integrated with Roxie Integrated
 
-
-Added instructions tu use git bash
-
-
-
-Commited and pushed from PORTATIL
+Commited and pushed from PORTATIL.

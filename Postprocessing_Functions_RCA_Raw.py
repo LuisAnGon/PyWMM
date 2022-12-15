@@ -143,7 +143,8 @@ def ContinuousRotatingCoilAnalysisRaw (df, knAbs, knCmp, MagOrder, Rref, Analysi
         
         Header_ave['Average']=Header[Header.columns[1:]].mean(axis=1)
         Header_ave.index=["position","Rref [m]","x [m]","y [m]","Angle (Applied Calib) [mrad]"]
-        Header_ave=Header_ave.append(pd.Series(name='Space'))
+        # Header_ave=pd.concat([Header_ave,pd.Series(name='Space',dtype="float64")],axis="index")
+        # # Header_ave=Header_ave.append(pd.Series(name='Space'))
         
         NCmpindex=["B1"]
         NCmp_ave=pd.DataFrame()
@@ -152,7 +153,7 @@ def ContinuousRotatingCoilAnalysisRaw (df, knAbs, knCmp, MagOrder, Rref, Analysi
         for i in range(len(NCmp)+1)[2:]:
             NCmpindex.append("b"+str(i))
         NCmp_ave.index=NCmpindex
-        NCmp_ave=NCmp_ave.append(pd.Series(name='Space'))
+        # NCmp_ave=NCmp_ave.append(pd.Series(name='Space'))
         
         
         SCmpindex=["A1"]
@@ -162,10 +163,11 @@ def ContinuousRotatingCoilAnalysisRaw (df, knAbs, knCmp, MagOrder, Rref, Analysi
         for i in range(len(SCmp)+1)[2:]:
             SCmpindex.append("a"+str(i))
         SCmp_ave.index=SCmpindex
-        SCmp_ave=SCmp_ave.append(pd.Series(name='Space'))
+        # SCmp_ave=SCmp_ave.append(pd.Series(name='Space'))
         
         
-        turn=Header_ave.append(NCmp_ave.append(SCmp_ave))
+        # turn=Header_ave.append(NCmp_ave.append(SCmp_ave))
+        turn=pd.concat([Header_ave,NCmp_ave,SCmp_ave],axis=0)
 
     #     Creates a df with the shape:
     # =============================================================================

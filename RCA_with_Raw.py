@@ -22,9 +22,9 @@ from Postprocessing_Functions_RCA_Raw import RotatingCoilAnalysisTurn, Continuou
 # Takes manually the location of the folder with the data. In the folder there is a raw.txt file and a shimming.output file
 
 # folder=r'C:\PyWMM-Medidas Elytt\MCBXFB02\Outer Collar'
-folder=r'C:\PyWMM-Medidas Elytt\MCBXFB02\Inner Iron'
+folder=r'C:\PyWMM-Medidas Elytt\MCBXFB02\Inner Collar'
 nombre=folder.split("\\")[-1] #Folder nameprint
-shimpath=r"C:\PyWMM\Shimming"
+
 
 
 # Takes manually the location of the folder with the data. In the folder there is a raw.txt file and a shimming.output file
@@ -38,11 +38,13 @@ for name in os.listdir(folder):
 
 
 # =============================================================================
+
 #Reads the raw file and converts it into a dataframe. A bit tricky since in the .txt there are columns without names 
 #(all those corresponding to fluxes ans time)
 newrawname=folder+"\\newraw.txt"
 
 f=open(rawname)
+print("***********************")
 print("rawname: ",rawname)
 head=f.readlines()[0]
 f.close()
@@ -89,6 +91,9 @@ print("coil",coil)
 tipo=rawfile['Magnet type'][0][-1] # Detects wether Magnet is A or B
 print("tipo",tipo)
 
+inner_skew_after_outer_press=int(folder.split("\\")[-1]=="Skew")
+ 
+
 # nombreShort=nombre.split("_200")[0].split("_600")[0]
 iron=int(rawfile['Fabrication stage'][0]=="Iron")
 print('Fabrication stage',rawfile['Fabrication stage'][0])
@@ -106,16 +111,21 @@ print("inner-outer",rawfile['Dipole'][0])
 
 if collar==0 and iron==1:
     Rot90=0 
-    print("The dipole is NOT rotated 90 deg")
-if collar==1 and iron==0 and inner==1 and outer==0:
+    print("The Magnet is NOT rotated 90 deg")
+    
+if collar==1 and iron==0 and inner==1 and outer==0 and inner_skew_after_outer_press==0:
     Rot90=0
-    print("The dipole is NOT rotated 90 deg")
+    print("The Magnet is NOT rotated 90 deg")
+    
+if collar==1 and iron==0 and inner==1 and outer==0 and inner_skew_after_outer_press==1:
+    Rot90=1
+    print("The Magnet Is rotated 90 deg")   
+    
 if collar==1 and iron==0 and inner==0 and outer ==1:
     Rot90=1
-    print("The dipole is rotated 90 deg")
+    print("The Magnet Is rotated 90 deg")
 
-Rot90=int(input("Rot90"))
-    
+
 if Rot90==1 and inner==1:
     MainField="SKEW"
 elif Rot90==0 and inner==0:
@@ -130,7 +140,7 @@ else:
 
 print("coil",coil)
 print("Main Field: ",MainField)
-
+print("***********************")
 # =============================================================================
 # Based on above defines lists with the longitudinal positions (paso)y
 
@@ -182,20 +192,17 @@ i_pos=1
 
 
 for pos in list(rawfile['PosN'].unique()):
-    df=rawfile[rawfile["PosN"]==pos]
-    # print("pos:" ,pos)
+    df=rawfile[rawfile["PosN"]==pos] #Filters by Position
     for Current in list(rawfile['Iset(A)'].unique()):
-        dfc=df[df["Iset(A)"]==Current]
-        # print("Current: " ,Current)
+        dfc=df[df["Iset(A)"]==Current] #For each position Filters by current (positive and negative)
         for rot in list(rawfile['Speed(rpm)'].unique()):
-            # print("Rotation: " ,rot)
-            dfr=dfc[dfc["Speed(rpm)"]==rot]
-            # print(dfr["Imeas(A)"])
-        
-            Av=ContinuousRotatingCoilAnalysisRaw (dfr, knAbs, knCmp, MagOrder, Rref, AnalysisOptions,coil,MainField,rot,CalibAng) #Get the average of all the 10 Rotation coil turns for this pos,curr y rot_Direction
-            # print (Av)
-        # =============================================================================
-        #  Concatenates df to Av_pos or Av_neg depending on the signal of the current
+            dfr=dfc[dfc["Speed(rpm)"]==rot] #For each position and current Filters by rotation direction (positive and negative)
+            
+            #Gets the average of all the 10 Rotation coil turns for each specific position, current and rot_Direction
+            #↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+            Av=ContinuousRotatingCoilAnalysisRaw (dfr, knAbs, knCmp, MagOrder, Rref, AnalysisOptions,coil,MainField,rot,CalibAng) 
+            # =============================================================================
+            #  Concatenates df to Av_pos or Av_neg depending on the signal of the current
         
             Av=Av.rename(columns={"Average":i_pos-1})
             
@@ -232,9 +239,17 @@ i=0
 
 
 for item in paso: #for loop in steps of two in order to step from position to position. 
-                  #Adds to the emptyAv_pos_rot df columns for each position and selects the multipoles for positive an negative rotations and makes the average
+    #Adds to the empty Av_pos_rot df columns for each position and selects the multipoles for positive an negative rotations and makes the average
+    #↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
     Av_pos_rot[item]=(Av_pos.iloc[:,i]+Av_pos.iloc[:,i+1])/2
     i=i+2
+
+#Av_pos_rot have the shape: (For negative currents)
+    #
+    # |    Pos 0    |    Pos 1    |    Pos 2    |    Pos 3    |    Pos 4    |
+    # |Average rots |Average rots |Average rots |Average rots |Average rots |
+    #
+
 
 Av_neg.loc["Current [A]"]=negcurr #adds the row current to the Av (For negative currents)
 i=0
@@ -243,6 +258,12 @@ for item in paso: #for loop in steps of two in order to step from position to po
                   #Adds to the emptyAv_pos_rot df columns for each position and selects the multipoles for positive an negative rotations and makes the average
     Av_neg_rot[item]=(Av_neg.iloc[:,i]+Av_neg.iloc[:,i+1])/2
     i=i+2
+
+#Av_neg_rot have the shape: (For negative currents)
+    #
+    # |    Pos 0    |    Pos 1    |    Pos 2    |    Pos 3    |    Pos 4    |
+    # |Average rots |Average rots |Average rots |Average rots |Average rots |
+    #
 
 
 # =============================================================================
@@ -334,32 +355,71 @@ elif MainField=="NORMAL":
 
 # Av.rename(index={mainRoxie:"Main Field [mT]"},inplace=True)
 # Av.loc["Current [A]"]=[5]*len(paso)
-Av.loc["Main Field [mT]"]=Av.loc[mainRoxie]*1000
-Av.loc["Transfer Function [mT/A]"]=Av.loc["Main Field [mT]"]/Av.loc["Current [A]"]
 
 
+Av.loc["Main Field [mT]"]=Av.loc[mainRoxie]*1000 #Adds the row Main field in mT
+Av.loc["Transfer Function [mT/A]"]=Av.loc["Main Field [mT]"]/Av.loc["Current [A]"] #Adds the row Transfer Function
 
 
+#PARA MCBXFA HAY QUE CMBIAR AQUÍ PARA PONER UNA LONGITUD DE COIL MENOR EN EL PUNTO INTERMEDIO
+if tipo=="B":
+    
+    integrField=sum(Av.loc["Main Field [mT]"])*(int(coil)/1000)
+    
+    Av.loc["%"]=Av.loc["Main Field [mT]"]*int(coil)/1000/integrField #Adds the row % Which is the percentage of the main field at each position
+    
+    #Last correction of the angle due to the fact that the FFMM data has a cyclic shift of +1 so we must correct the effect of such +1 value of the encoder, which is (2*np.pi)/512
+    Angle_Corr=1000*(2*np.pi)/512
+    Av.loc["Angle (Applied Calib) [mrad]"]=Av.loc["Angle (Applied Calib) [mrad]"]-Angle_Corr
+    
+    Av["Integral"]=[""]*len(Av)
+    
+    for row in ["Current [A]","Main Field [mT]","b2","b3","b4","b5","b6","b7","b8","b9","b10","b11","b12","b13","b14","b15","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15"]:
+        if row=="Main Field [mT]": 
+            Av.at[row,"Integral"]=sum(Av[paso[1:][:-1]].loc[row])*int(coil)/1000
+            # Av["Integral"].loc[row]=sum(Av[paso[1:][:-1]].loc[row])*int(coil)/1000
+        else:
+            sp1=Av[paso[1:][:-1]].loc[row]
+            sp2=Av[paso[1:][:-1]].loc["%"]
+            Av.at[row,"Integral"]=np.dot(sp1,sp2)
+            # Av["Integral"].loc[row]=np.dot(sp1,sp2)
+    
+    # Av["Integral"].loc["Transfer Function [mT/A]"]=Av["Integral"].loc["Main Field [mT]"]/Av["Integral"].loc["Current [A]"]
+      
+    Av.at["Transfer Function [mT/A]","Integral"]=Av.at["Main Field [mT]","Integral"]/Av.at["Current [A]","Integral"]
 
-integrField=sum(Av.loc["Main Field [mT]"])*(int(coil)/1000)
-Av.loc["%"]=Av.loc["Main Field [mT]"]*int(coil)/1000/integrField
 
-#Last correction of the angle due to the fact that the FFMM data has a cyclic shift of +1 so we must correct the effect of such +1 value of the encoder, which is (2*np.pi)/512
-Angle_Corr=1000*(2*np.pi)/512
-Av.loc["Angle (Applied Calib) [mrad]"]=Av.loc["Angle (Applied Calib) [mrad]"]-Angle_Corr
+#========================================================================================================
+#ADDED FOR THE a TYPE MAGNETS BECAUSE THE MEASURMENTS ARE CARRIED OUT WITH AN OVERLAP AT THE MIDDLE POINT
+#========================================================================================================
+#↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓#↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+elif tipo=="A":
+    integrField=sum(Av.loc["Main Field [mT]"])*(int(coil)/1000)
+     
+    coil_lengths_overlap=[600,600,600,400,600,600,600]
+    
+    Av.loc["%"]=Av.loc["Main Field [mT]"]*coil_lengths_overlap/1000/integrField #Adds the row % Which is the percentage of the main field at each position
+    
+    #Last correction of the angle due to the fact that the FFMM data has a cyclic shift of +1 so we must correct the effect of such +1 value of the encoder, which is (2*np.pi)/512
+    Angle_Corr=1000*(2*np.pi)/512
+    Av.loc["Angle (Applied Calib) [mrad]"]=Av.loc["Angle (Applied Calib) [mrad]"]-Angle_Corr
+    
+    Av["Integral"]=[""]*len(Av)
+    
+    for row in ["Current [A]","Main Field [mT]","b2","b3","b4","b5","b6","b7","b8","b9","b10","b11","b12","b13","b14","b15","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15"]:
+        if row=="Main Field [mT]": 
+            Av["Integral"].loc[row]=np.dot(Av[paso[1:][:-1]].loc[row],coil_lengths_overlap[1:][:-1])/1000
+        else:
+            sp1=Av[paso[1:][:-1]].loc[row]
+            sp2=Av[paso[1:][:-1]].loc["%"]
+            Av.at[row,"Integral"]=np.dot(sp1,sp2)
+      
+    Av.at["Transfer Function [mT/A]","Integral"]=Av.at["Main Field [mT]","Integral"]/Av.at["Current [A]","Integral"]  
 
-Av["Integral"]=[""]*len(Av)
-
-for row in ["Current [A]","Main Field [mT]","b2","b3","b4","b5","b6","b7","b8","b9","b10","b11","b12","b13","b14","b15","a2","a3","a4","a5","a6","a7","a8","a9","a10","a11","a12","a13","a14","a15"]:
-    if row=="Main Field [mT]":    
-        Av["Integral"].loc[row]=sum(Av[paso[1:][:-1]].loc[row])*int(coil)/1000
-    else:
-        sp1=Av[paso[1:][:-1]].loc[row]
-        sp2=Av[paso[1:][:-1]].loc["%"]
-        Av["Integral"].loc[row]=np.dot(sp1,sp2)
-
-Av["Integral"].loc["Transfer Function [mT/A]"]=Av["Integral"].loc["Main Field [mT]"]/Av["Integral"].loc["Current [A]"]
-  
+#↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+#========================================================================================================
+#ADDED FOR THE a TYPE MAGNETS BECAUSE THE MEASURMENTS ARE CARRIED OUT WITH AN OVERLAP AT THE MIDDLE POINT
+#========================================================================================================
 
 Av.to_excel(folder+"\\Summary_MM_"+nombre+".xlsx")
 
@@ -376,7 +436,9 @@ Av.to_excel(folder+"\\Summary_MM_"+nombre+".xlsx")
 # =============================================================================
 RoxieFolder=SelectRoxie(iron,inner,Rot90)
 print("Roxie Folder: ", RoxieFolder)
-
+print("Shimming file: ", shimname.split("\\")[-1])
+print("Sensitivity file: ", senspath.split("\\")[-1])
+print("***********************")
 # RoxieFolder=r"C:\PyWMM\ROXIE-MCBXFB\No Iron\No Iron Inner Dipole\MCBXFB No Iron Inner Dipole Rot90"
 # =============================================================================
 # Finds the Roxie file in C: according to the characyeristics of the magnet. Info taken from folder name
@@ -500,11 +562,15 @@ comp_Roxie_Meas_shim["Integrated_MM"]=list(Av["Integral"].loc[indexlist])
 
 
 if MainField=="NORMAL":
-    comp_Roxie_Meas_shim["Integrated_Roxie"].loc["B1"]=RoxieMainInteg
-    comp_Roxie_Meas_shim["Integrated_MM"].loc["B1"]=Av["Integral"].loc["Main Field [mT]"]
+    comp_Roxie_Meas_shim.at["B1","Integrated_Roxie"]=RoxieMainInteg
+    comp_Roxie_Meas_shim.at["B1","Integrated_MM"]=Av.at["Main Field [mT]","Integral"]
+    # comp_Roxie_Meas_shim["Integrated_Roxie"].loc["B1"]=RoxieMainInteg
+    # comp_Roxie_Meas_shim["Integrated_MM"].loc["B1"]=Av["Integral"].loc["Main Field [mT]"]
 elif MainField=="SKEW":
-    comp_Roxie_Meas_shim["Integrated_Roxie"].loc["A1"]=RoxieMainInteg
-    comp_Roxie_Meas_shim["Integrated_MM"].loc["A1"]=Av["Integral"].loc["Main Field [mT]"]
+    comp_Roxie_Meas_shim.at["A1","Integrated_Roxie"]=RoxieMainInteg
+    comp_Roxie_Meas_shim.at["A1","Integrated_MM"]=Av.at["Main Field [mT]","Integral"]
+    # comp_Roxie_Meas_shim["Integrated_Roxie"].loc["A1"]=RoxieMainInteg
+    # comp_Roxie_Meas_shim["Integrated_MM"].loc["A1"]=Av["Integral"].loc["Main Field [mT]"]
     
 
 
@@ -521,31 +587,63 @@ comp_Roxie_Meas_shim.to_excel(folder+'\\Roxie_vs_MM_vs_Shim_MiddlePoint '+nombre
 
 
 fig, axs = plt.subplots(2,figsize=(5,7))
-x=[2,3,4,5,6,7,8,9,10,11,12,13,14,15]
-axs[0].bar([a-0.25 for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Shim_Middle"],label="Shimming",width=0.3,color="b")
-axs[0].bar([a+0.25 for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Roxie_Middle"],label="Roxie",width=0.3,color="g")
-axs[0].bar([a for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["MM_Middle"],label="MM",width=0.5,color="r")
 
-axs[0].set_title("Comparison Roxie-MM-Shimming ")
-axs[0].grid(linestyle='--', linewidth=0.5)
-axs[0].set_xticks([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
-axs[0].set_yticks([-20,-15,-10,-5,0,5,10,15,20])
-#axs[0].set_xlabel("n")
-axs[0].set_ylabel("bn")
-axs[0].legend()
+if MainField=="NORMAL":
+
+    x=[2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    axs[0].bar([a-0.25 for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Shim_Middle"],label="Shimming",width=0.3,color="b")
+    axs[0].bar([a+0.25 for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Roxie_Middle"],label="Roxie",width=0.3,color="g")
+    axs[0].bar([a for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["MM_Middle"],label="MM",width=0.5,color="r")
+    
+    axs[0].set_title("Comparison Roxie-MM-Shimming ")
+    axs[0].grid(linestyle='--', linewidth=0.5)
+    axs[0].set_xticks([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
+    axs[0].set_yticks([-20,-15,-10,-5,0,5,10,15,20])
+    #axs[0].set_xlabel("n")
+    axs[0].set_ylabel("bn")
+    axs[0].legend()
 
 
-axs[1].bar([a-0.25 for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Shim_Middle"],label="Shimming",width=0.3,color="b")
-axs[1].bar([a+0.25 for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Roxie_Middle"],label="Roxie",width=0.3,color="g")
-axs[1].bar([a for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["MM_Middle"],label="MM",width=0.5,color="r")
+    axs[1].bar([a-0.25 for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Integrated_MM"],label="MM Integrated",width=0.3,color="b")
+    axs[1].bar([a+0.25 for a in x],comp_Roxie_Meas_shim.loc[['b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11','b12', 'b13', 'b14', 'b15']]["Integrated_Roxie"],label="Roxie Integrated",width=0.3,color="g")
+     
+    #axs[1].set_title("Comparison Roxie-MM Skew Multipoles")
+    axs[1].grid(linestyle='--', linewidth=0.5)
+    axs[1].set_xticks([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
+    axs[1].set_yticks([-20,-15,-10,-5,0,5,10,15,20])
+    axs[1].set_xlabel("n")
+    axs[1].set_ylabel("bn")
+    axs[1].legend()
 
-#axs[1].set_title("Comparison Roxie-MM Skew Multipoles")
-axs[1].grid(linestyle='--', linewidth=0.5)
-axs[1].set_xticks([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
-axs[1].set_yticks([-20,-15,-10,-5,0,5,10,15,20])
-axs[1].set_xlabel("n")
-axs[1].set_ylabel("an")
-axs[1].legend()
+if MainField=="SKEW":
+
+    x=[2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    axs[0].bar([a-0.25 for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Shim_Middle"],label="Shimming",width=0.3,color="b")
+    axs[0].bar([a+0.25 for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Roxie_Middle"],label="Roxie",width=0.3,color="g")
+    axs[0].bar([a for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["MM_Middle"],label="MM",width=0.5,color="r")
+    
+    #axs[1].set_title("Comparison Roxie-MM Skew Multipoles")
+    axs[0].grid(linestyle='--', linewidth=0.5)
+    axs[0].set_xticks([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
+    axs[0].set_yticks([-20,-15,-10,-5,0,5,10,15,20])
+    axs[0].set_xlabel("n")
+    axs[0].set_ylabel("an")
+    axs[0].legend()
+
+
+    axs[1].bar([a-0.25 for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Integrated_MM"],label="MM Integrated",width=0.3,color="b")
+    axs[1].bar([a+0.25 for a in x],comp_Roxie_Meas_shim.loc[['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11','a12', 'a13', 'a14', 'a15']]["Integrated_Roxie"],label="Roxie Integrated",width=0.3,color="g")
+    
+    #axs[1].set_title("Comparison Roxie-MM Skew Multipoles")
+    axs[1].grid(linestyle='--', linewidth=0.5)
+    axs[1].set_xticks([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
+    axs[1].set_yticks([-20,-15,-10,-5,0,5,10,15,20])
+    axs[1].set_xlabel("n")
+    axs[1].set_ylabel("an")
+    axs[1].legend()    
+    
+    
+    
 
 fig.savefig((folder+"\\Informe_Multipoles_Center.pdf"))
 
